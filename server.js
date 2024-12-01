@@ -26,6 +26,7 @@ const fileRoutes = require('./routes/fileRoutes');
 app.use('/auth', authRoutes);
 app.use('/mood', authenticate, moodRoutes); // Authenticated routes
 app.use('/file', fileRoutes);
+app.use('/api', authRoutes);
 
 // Start server
 const PORT = process.env.PORT || 8080;
