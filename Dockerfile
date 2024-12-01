@@ -1,5 +1,5 @@
 # Gunakan Node.js official image dari Docker Hub
-FROM node:16
+FROM node:18
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8080
 
 # Jalankan aplikasi Node.js
-CMD ["node", "app.js"]
+CMD ["node", "server.js"]
