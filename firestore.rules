@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isValidMood() {
+      return request.resource.data.mood in ['Happy', 'Sad', 'Angry', 'Fearful', 'Love'] ||
+             !('mood' in request.resource.data);
+    }
+    
+    function isValidStressLevel() {
+      return request.resource.data.stressLevel is string &&
+             request.resource.data.stressLevel in ['low', 'moderate', 'high'] ||
+             !('stressLevel' in request.resource.data);
+    }
+    
+    function hasValidFields() {
+      let allowedFields = [
+        'diaryEntry', 'mood', 'stressLevel', 'createdAt', 'updatedAt', 'userId',
+        'predictedMood', 'sympathyMessage', 'thoughtfulSuggestions', 'thingsToDo'
+      ];
+      return request.resource.data.keys().hasAll(['diaryEntry']) &&
+             request.resource.data.keys().hasOnly(allowedFields);
+    }
+
+    // User's mood entries collection
+    match /users/{userId}/moods/{moodId} {
+      allow read: if true;
+      allow create: if hasValidFields() &&
+                      isValidMood() &&
+                      isValidStressLevel();
+      allow update: if hasValidFields() &&
+                      isValidMood() &&
+                      isValidStressLevel();
+      allow delete: if true;
+    }
+  }
+}
