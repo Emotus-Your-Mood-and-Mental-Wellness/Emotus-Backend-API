@@ -39,10 +39,27 @@ const notificationSettingsSchema = [
   query('userId').optional().isString()
 ];
 
+const photoUploadSchema = [
+  query('userId').optional().isString(),
+  body('photo').custom((value, { req }) => {
+    if (!req.file) {
+      throw new Error('Profile photo is required');
+    }
+    if (!req.file.mimetype.startsWith('image/')) {
+      throw new Error('File must be an image');
+    }
+    if (req.file.size > 5 * 1024 * 1024) {
+      throw new Error('File size must not exceed 5MB');
+    }
+    return true;
+  })
+];
+
 module.exports = {
   createMoodSchema,
   updateMoodSchema,
   getMoodsSchema,
   getAnalyticsSchema,
-  notificationSettingsSchema
+  notificationSettingsSchema,
+  photoUploadSchema
 };

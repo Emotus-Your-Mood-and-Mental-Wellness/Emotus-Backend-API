@@ -5,6 +5,21 @@ const { sanitizeEntry } = require('../utils/validationUtils');
 const MLService = require('../services/mlService');
 
 class MoodEntry {
+  static standardizeMood(mood) {
+    const moodMap = {
+      'happy': 'Happy',
+      'sad': 'Sadness',
+      'sadness': 'Sadness',
+      'anger': 'Anger',
+      'angry': 'Anger',
+      'fear': 'Fear',
+      'fearful': 'Fear',
+      'love': 'Love'
+    };
+    
+    return moodMap[mood.toLowerCase()] || mood;
+  }
+
   static async create(entryData, userId = 'default-user') {
     try {
       const moodRef = db.collection('users').doc(userId).collection('moods');
@@ -13,10 +28,14 @@ class MoodEntry {
       // Get ML prediction
       const prediction = await MLService.predictMood(sanitizedData.diaryEntry);
       
+      // Standardize mood format
+      const standardizedMood = this.standardizeMood(prediction.predicted_mood);
+      
       const newEntry = {
         ...sanitizedData,
         userId,
-        predictedMood: prediction.predicted_mood,
+        predictedMood: standardizedMood,
+        mood: sanitizedData.mood ? this.standardizeMood(sanitizedData.mood) : standardizedMood,
         stressLevel: prediction.stress_level,
         sympathyMessage: prediction.sympathy_message,
         thoughtfulSuggestions: prediction.thoughtful_suggestions,
@@ -69,13 +88,17 @@ class MoodEntry {
       let predictionData = {};
       if (sanitizedData.diaryEntry) {
         const prediction = await MLService.predictMood(sanitizedData.diaryEntry);
+        const standardizedMood = this.standardizeMood(prediction.predicted_mood);
         predictionData = {
-          predictedMood: prediction.predicted_mood,
+          predictedMood: standardizedMood,
+          mood: sanitizedData.mood ? this.standardizeMood(sanitizedData.mood) : standardizedMood,
           stressLevel: prediction.stress_level,
           sympathyMessage: prediction.sympathy_message,
           thoughtfulSuggestions: prediction.thoughtful_suggestions,
           thingsToDo: prediction.things_to_do,
         };
+      } else if (sanitizedData.mood) {
+        predictionData.mood = this.standardizeMood(sanitizedData.mood);
       }
       
       await FirebaseUtils.runTransaction(async (transaction) => {

@@ -23,7 +23,10 @@ class AnalyticsService {
       
       query = query.orderBy('createdAt');
       const snapshot = await query.get();
-      const entries = snapshot.docs.map(doc => doc.data());
+      const entries = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      }));
 
       return {
         moodDistribution: this.calculateMoodDistribution(entries),
@@ -38,37 +41,65 @@ class AnalyticsService {
   }
 
   static calculateMoodDistribution(entries) {
-    // Initialize with all possible moods (lowercase)
+    // Initialize with all possible moods
     const distribution = {
-      'happy': 0,
-      'sadness': 0,
-      'anger': 0,
-      'fear': 0,
-      'love': 0
+      Happy: {
+        count: 0,
+        percentage: 0
+      },
+      Sadness: {
+        count: 0,
+        percentage: 0
+      },
+      Anger: {
+        count: 0,
+        percentage: 0
+      },
+      Fear: {
+        count: 0,
+        percentage: 0
+      },
+      Love: {
+        count: 0,
+        percentage: 0
+      }
     };
 
     // Count occurrences of each mood
     entries.forEach(entry => {
-      const mood = (entry.mood || entry.predictedMood || '').toLowerCase();
-      if (mood && distribution.hasOwnProperty(mood)) {
-        distribution[mood]++;
+      const mood = (entry.mood || entry.predictedMood || '');
+      if (mood) {
+        const standardizedMood = this.standardizeMood(mood);
+        if (distribution[standardizedMood]) {
+          distribution[standardizedMood].count++;
+        }
       }
     });
 
-    // Calculate percentages and format response with proper capitalization
+    // Calculate percentages
     const total = entries.length;
-    const moodCapitalization = {
+    if (total > 0) {
+      Object.keys(distribution).forEach(mood => {
+        distribution[mood].percentage = Math.round((distribution[mood].count / total) * 100);
+      });
+    }
+
+    return distribution;
+  }
+
+  static standardizeMood(mood) {
+    const moodMap = {
       'happy': 'Happy',
+      'sad': 'Sadness',
       'sadness': 'Sadness',
       'anger': 'Anger',
+      'angry': 'Anger',
       'fear': 'Fear',
+      'fearful': 'Fear',
       'love': 'Love'
     };
-
-    return Object.entries(distribution).map(([mood, count]) => ({
-      [moodCapitalization[mood]]: count,
-      percentage: total > 0 ? (count / total) * 100 : 0
-    }));
+    
+    return moodMap[mood.toLowerCase()] || mood;
   }
 
   static calculateStressLevelTrend(entries) {
@@ -135,7 +166,8 @@ class AnalyticsService {
       'this', 'that', 'these', 'those', 'they', 'them', 'their', 'what', 'which',
       'who', 'whom', 'whose', 'when', 'where', 'why', 'how', 'all', 'any', 'both',
       'each', 'few', 'more', 'most', 'other', 'some', 'such', 'than', 'too',
-      'very', 'can', 'cannot', 'just', 'now', 'also', 'then'
+      'very', 'can', 'cannot', 'just', 'now', 'also', 'then', 'aku', 'saya', 'dia',
+      'kamu'
     ]);
 
     // Filter words: length > 3, not common words, not numbers
