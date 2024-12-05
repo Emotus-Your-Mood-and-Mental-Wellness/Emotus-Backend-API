@@ -1,4 +1,5 @@
 const { body, query } = require('express-validator');
+const { isValidDateFormat } = require('./dateUtils');
 
 const createMoodSchema = [
   body('diaryEntry').notEmpty().trim().escape()
@@ -20,14 +21,20 @@ const updateMoodSchema = [
 ];
 
 const getMoodsSchema = [
-  query('startDate').optional().isISO8601(),
-  query('endDate').optional().isISO8601()
+  query('startDate').optional().custom(isValidDateFormat)
+    .withMessage('Start date must be in YYYY-MM-DD format'),
+  query('endDate').optional().custom(isValidDateFormat)
+    .withMessage('End date must be in YYYY-MM-DD format')
 ];
 
 const getAnalyticsSchema = [
-  query('startDate').optional().isISO8601(),
-  query('endDate').optional().isISO8601(),
-  query('userId').optional().isString()
+  query('startDate').optional().custom(isValidDateFormat)
+    .withMessage('Start date must be in YYYY-MM-DD format'),
+  query('endDate').optional().custom(isValidDateFormat)
+    .withMessage('End date must be in YYYY-MM-DD format'),
+  query('userId').optional().isString(),
+  query('period').optional().isIn(['daily', 'weekly', 'monthly'])
+    .withMessage('Period must be daily, weekly, or monthly')
 ];
 
 const notificationSettingsSchema = [

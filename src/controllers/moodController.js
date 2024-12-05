@@ -18,7 +18,12 @@ class MoodController {
       const { startDate, endDate } = req.query;
       const userId = req.query.userId || 'default-user';
       const entries = await MoodEntry.getAll(userId, startDate, endDate);
-      res.json(entries);
+      res.json({
+        data: entries,
+        total: entries.length,
+        startDate,
+        endDate
+      });
     } catch (error) {
       console.error('Get mood entries error:', error);
       res.status(500).json({ error: error.message });

@@ -1,19 +1,15 @@
 const { db } = require('../config/firebase');
-const { formatDate } = require('../utils/dateUtils');
+const { formatDate, getDateRange } = require('../utils/dateUtils');
 
 class SummaryService {
-  static async generateDailySummary(userId, date) {
+  static async generateSummary(userId, startDate, endDate, period = 'daily') {
     try {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
+      const { startDate: start, endDate: end } = getDateRange(startDate, endDate, period);
 
       const moodRef = db.collection('users').doc(userId).collection('moods');
       const query = moodRef
-        .where('createdAt', '>=', formatDate(startOfDay))
-        .where('createdAt', '<=', formatDate(endOfDay));
+        .where('createdAt', '>=', formatDate(start))
+        .where('createdAt', '<=', formatDate(end));
 
       const snapshot = await query.get();
       const entries = snapshot.docs.map(doc => doc.data());
@@ -43,7 +39,7 @@ class SummaryService {
       const moodProgression = entries
         .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
         .map(entry => ({
-          time: entry.createdAt,
+          date: formatDate(new Date(entry.createdAt)),
           mood: entry.predictedMood,
           stressLevel: entry.stressLevel,
           sympathyMessage: entry.sympathyMessage,
@@ -51,28 +47,35 @@ class SummaryService {
         }));
 
       return {
-        date: formatDate(date),
+        period,
+        startDate: formatDate(start),
+        endDate: formatDate(end),
         totalEntries: entries.length,
         dominantMood,
         dominantStressLevel,
         moodProgression,
-        summary: this.generateTextSummary(entries.length, dominantMood, dominantStressLevel, moodProgression)
+        summary: this.generateTextSummary(
+          entries.length, 
+          dominantMood, 
+          dominantStressLevel, 
+          moodProgression, 
+          period
+        )
       };
     } catch (error) {
       console.error('Summary generation error:', error);
-      throw new Error('Failed to generate daily summary');
+      throw new Error('Failed to generate summary');
     }
   }
 
-  static generateTextSummary(totalEntries, dominantMood, dominantStressLevel, moodProgression) {
+  static generateTextSummary(totalEntries, dominantMood, dominantStressLevel, moodProgression, period) {
     if (totalEntries === 0) {
-      return "No mood entries recorded for this day.";
+      return `No mood entries recorded for this ${period} period.`;
     }
 
-    let summary = `You recorded ${totalEntries} mood entries today. `;
+    let summary = `You recorded ${totalEntries} mood entries during this ${period} period. `;
     summary += `Your dominant mood was ${dominantMood} with predominantly ${dominantStressLevel} stress levels. `;
 
-    // Analyze mood stability
     if (moodProgression.length > 1) {
       const moodChanges = moodProgression.slice(1).filter((entry, index) => 
         entry.mood !== moodProgression[index].mood
@@ -83,11 +86,11 @@ class SummaryService {
       ).length;
 
       if (moodChanges === 0 && stressChanges === 0) {
-        summary += "Your mood and stress levels remained very stable throughout the day.";
+        summary += "Your mood and stress levels remained very stable throughout the period.";
       } else if (moodChanges <= 2 && stressChanges <= 2) {
-        summary += "Your mood and stress levels showed some minor variations during the day.";
+        summary += "Your mood and stress levels showed some minor variations during the period.";
       } else {
-        summary += "Your mood and stress levels showed significant changes throughout the day. Consider reviewing the thoughtful suggestions provided for each entry.";
+        summary += "Your mood and stress levels showed significant changes throughout the period. Consider reviewing the thoughtful suggestions provided for each entry.";
       }
     }
 

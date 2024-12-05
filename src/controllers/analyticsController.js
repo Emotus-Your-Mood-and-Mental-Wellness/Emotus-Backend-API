@@ -20,19 +20,21 @@ class AnalyticsController {
     }
   }
 
-  static async getDailySummary(req, res) {
+  static async getSummary(req, res) {
     try {
-      const { date } = req.query;
+      const { startDate, endDate, period } = req.query;
       const userId = req.query.userId || 'default-user';
 
-      const summary = await SummaryService.generateDailySummary(
+      const summary = await SummaryService.generateSummary(
         userId,
-        date ? new Date(date) : new Date()
+        startDate || new Date(),
+        endDate || new Date(),
+        period || 'daily'
       );
 
       res.json(summary);
     } catch (error) {
-      console.error('Get daily summary error:', error);
+      console.error('Get summary error:', error);
       res.status(500).json({ error: error.message });
     }
   }
