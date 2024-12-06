@@ -1,21 +1,27 @@
 const { db } = require('../config/firebase');
-const { formatDate } = require('../utils/dateUtils');
+const { formatDate, getDateRange } = require('../utils/dateUtils');
 const MoodMessageService = require('./moodMessageService');
 
 class SummaryService {
-  static async generateDailySummary(userId, startDate, endDate) {
+  static async generateDailySummary(userId, startDate, endDate, period = 'daily') {
     try {
+      const { startDate: start, endDate: end } = getDateRange(startDate, endDate, period);
+      const formattedStartDate = formatDate(start);
+      const formattedEndDate = formatDate(end);
+
       const moodRef = db.collection('users').doc(userId).collection('moods');
       const query = moodRef
-        .where('createdAt', '>=', formatDate(startDate))
-        .where('createdAt', '<=', formatDate(endDate));
+        .where('createdAt', '>=', formattedStartDate)
+        .where('createdAt', '<=', formattedEndDate)
+        .orderBy('createdAt');
 
       const snapshot = await query.get();
       const entries = snapshot.docs.map(doc => doc.data());
 
       const moodCounts = entries.reduce((acc, entry) => {
-        if (entry.predictedMood) {
-          acc[entry.predictedMood] = (acc[entry.predictedMood] || 0) + 1;
+        const mood = entry.mood || entry.predictedMood;
+        if (mood) {
+          acc[mood] = (acc[mood] || 0) + 1;
         }
         return acc;
       }, {});
@@ -24,16 +30,22 @@ class SummaryService {
         .sort(([, a], [, b]) => b - a)
         .map(([mood]) => mood)[0] || 'Unknown';
 
+      // Count occurrences of each stress level
       const stressLevelCounts = entries.reduce((acc, entry) => {
-        if (entry.stressLevel) {
-          acc[entry.stressLevel.toLowerCase()] = (acc[entry.stressLevel.toLowerCase()] || 0) + 1;
+        const stressLevel = entry.stressLevel;
+        if (stressLevel && ['Low', 'Medium', 'High'].includes(stressLevel)) {
+          acc[stressLevel] = (acc[stressLevel] || 0) + 1;
         }
         return acc;
       }, {});
 
-      const dominantStressLevel = Object.entries(stressLevelCounts)
-        .sort(([, a], [, b]) => b - a)
-        .map(([level]) => level)[0] || 'unknown';
+      // Determine dominant stress level based on frequency
+      let dominantStressLevel = 'Low'; // Default to Low if no stress levels found
+      if (Object.keys(stressLevelCounts).length > 0) {
+        dominantStressLevel = Object.entries(stressLevelCounts)
+          .sort(([, a], [, b]) => b - a) // Sort by frequency
+          .map(([level]) => level)[0];
+      }
 
       // Get personalized messages based on mood history
       const messages = await MoodMessageService.getPersonalizedMessages(
@@ -44,8 +56,8 @@ class SummaryService {
       );
 
       return {
-        startDate: formatDate(startDate),
-        endDate: formatDate(endDate),
+        startDate: formattedStartDate,
+        endDate: formattedEndDate,
         totalEntries: entries.length,
         dominantMood,
         dominantStressLevel,
