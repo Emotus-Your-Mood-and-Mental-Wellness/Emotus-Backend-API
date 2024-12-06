@@ -4,15 +4,45 @@ class AccountController {
   async generateNextUserId() {
     try {
       const usersRef = db.collection('users');
-      const snapshot = await usersRef.orderBy('userId', 'desc').limit(1).get();
+      const snapshot = await usersRef
+        .orderBy('userId', 'desc')
+        .get();
       
-      if (snapshot.empty) {
+      // Get all existing user IDs
+      const userIds = snapshot.docs.map(doc => {
+        const match = doc.data().userId.match(/^user(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      }).filter(id => !isNaN(id));
+
+      // If no users exist, start with user1
+      if (userIds.length === 0) {
         return 'user1';
       }
 
-      const lastUser = snapshot.docs[0].data();
-      const lastNumber = parseInt(lastUser.userId.replace('user', ''));
-      return `user${lastNumber + 1}`;
+      // Find the highest user number
+      const maxUserId = Math.max(...userIds);
+      const nextUserId = `user${maxUserId + 1}`;
+
+      // Verify the new ID doesn't exist (double-check)
+      const newUserRef = db.collection('users').doc(nextUserId);
+      const newUserDoc = await newUserRef.get();
+      
+      if (newUserDoc.exists) {
+        // In case of collision, find the next available number
+        let counter = maxUserId + 1;
+        while (true) {
+          const testId = `user${counter}`;
+          const testRef = db.collection('users').doc(testId);
+          const testDoc = await testRef.get();
+          
+          if (!testDoc.exists) {
+            return testId;
+          }
+          counter++;
+        }
+      }
+      
+      return nextUserId;
     } catch (error) {
       console.error('Generate user ID error:', error);
       throw new Error('Failed to generate user ID');
@@ -26,8 +56,16 @@ class AccountController {
       // Generate next user ID
       const userId = await this.generateNextUserId();
       
-      // Create user document
+      // Create user document with the generated ID as the document ID
       const userRef = db.collection('users').doc(userId);
+      
+      // Check if the document already exists
+      const doc = await userRef.get();
+      if (doc.exists) {
+        throw new Error('User ID already exists');
+      }
+      
+      // Create the user document
       await userRef.set({
         userId,
         username,
@@ -44,12 +82,13 @@ class AccountController {
         createdAt: new Date().toISOString()
       });
 
+      // Return success message without userId
       res.status(201).json({ 
-        message: 'Akun berhasil dibuat'
+        message: 'Account created successfully'
       });
     } catch (error) {
       console.error('Registration error:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: 'Failed to create account' });
     }
   }
 
