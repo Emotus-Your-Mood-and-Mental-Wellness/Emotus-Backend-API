@@ -272,7 +272,7 @@ curl "https://emotus-backend-api-1089286517825.asia-southeast2.run.app/api/analy
 
 2. Set up environment variables in Postman:
    - `baseUrl`: https://emotus-backend-api-1089286517825.asia-southeast2.run.app/api
-   - `userId`: user100
+   - `userId`: user1
 
 ## Error Handling
 
