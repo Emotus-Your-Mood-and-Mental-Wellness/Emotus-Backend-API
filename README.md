@@ -45,7 +45,7 @@ Response:
   "diaryEntry": "Today was a great day! I accomplished all my tasks.",
   "mood": "Happy",
   "predictedMood": "Happy",
-  "stressLevel": 3,
+  "stressLevel": "Low",
   "sympathyMessage": "Sungguh luar biasa! Kamu bisa menjaga mood yang positif.",
   "thoughtfulSuggestions": [...],
   "thingsToDo": [...],
