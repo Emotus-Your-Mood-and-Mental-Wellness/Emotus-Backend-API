@@ -1,6 +1,8 @@
 const { db } = require('../config/firebase');
 const { formatDate, getDateRange } = require('../utils/dateUtils');
 const MoodMessageService = require('./moodMessageService');
+const { getRandomHint } = require('../utils/moodHints');
+const { getRandomFeelInspire } = require('../utils/feelInspireMessages');
 
 class SummaryService {
   static async generateDailySummary(userId, startDate, endDate, period = 'daily') {
@@ -55,6 +57,12 @@ class SummaryService {
         db
       );
 
+      // Get a random helpful hint based on the dominant mood
+      const helpfulHint = getRandomHint(dominantMood);
+
+      // Get a random feel inspire message based on the dominant mood
+      const feelInspire = getRandomFeelInspire(dominantMood);
+
       return {
         startDate: formattedStartDate,
         endDate: formattedEndDate,
@@ -62,6 +70,8 @@ class SummaryService {
         dominantMood,
         dominantStressLevel,
         ...messages,
+        helpfulHint,
+        feelInspire,
         summary: this.generateTextSummary(entries.length, dominantMood, dominantStressLevel)
       };
     } catch (error) {
@@ -75,7 +85,7 @@ class SummaryService {
       return "No mood entries recorded for this period.";
     }
 
-    return `You recorded ${totalEntries} mood entries during this period. Your dominant mood was ${dominantMood} with predominantly ${dominantStressLevel} stress levels. Consider reviewing the thoughtful suggestions provided to maintain or improve your emotional well-being.`;
+    return `Anda mencatat ${totalEntries} entri suasana hati selama periode ini. Suasana hati Anda yang dominan adalah ${dominantMood} dengan tingkat stres yang didominasi ${dominantStressLevel} Pertimbangkan untuk meninjau kembali saran-saran bijaksana yang diberikan untuk mempertahankan atau meningkatkan kesejahteraan emosional Anda.`;
   }
 }
 

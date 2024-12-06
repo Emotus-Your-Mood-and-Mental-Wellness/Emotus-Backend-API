@@ -11,6 +11,7 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const userRoutes = require('./routes/userRoutes');
 const accountRoutes = require('./routes/accountRoutes');
+const dailyTipsRoutes = require('./routes/dailyTipsRoutes');
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/account', accountRoutes);
+app.use('/api/daily-tips', dailyTipsRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

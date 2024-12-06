@@ -1,11 +1,20 @@
 const express = require('express');
 const { validateRequest } = require('../middleware/validator');
-const AccountController = require('../controllers/accountController');
+const accountController = require('../controllers/accountController');
 const { accountSchema } = require('../utils/validationSchemas');
 
 const router = express.Router();
 
-// Save or update account information
+// Register new account (no userId required)
+router.post('/register', 
+  [
+    accountSchema.filter(validator => !validator.path), // Remove userId validation
+    validateRequest
+  ],
+  (req, res) => accountController.register(req, res)
+);
+
+// Save or update account information (requires userId)
 router.post('/', 
   (req, res, next) => {
     if (!req.query.userId) {
@@ -15,10 +24,10 @@ router.post('/',
   },
   accountSchema,
   validateRequest,
-  AccountController.saveAccountInfo
+  (req, res) => accountController.saveAccountInfo(req, res)
 );
 
-// Get account information
+// Get account information (requires userId)
 router.get('/',
   (req, res, next) => {
     if (!req.query.userId) {
@@ -26,10 +35,10 @@ router.get('/',
     }
     next();
   },
-  AccountController.getAccountInfo
+  (req, res) => accountController.getAccountInfo(req, res)
 );
 
-// Update account information
+// Update account information (requires userId)
 router.put('/',
   (req, res, next) => {
     if (!req.query.userId) {
@@ -39,7 +48,7 @@ router.put('/',
   },
   accountSchema,
   validateRequest,
-  AccountController.updateAccountInfo
+  (req, res) => accountController.updateAccountInfo(req, res)
 );
 
 module.exports = router;

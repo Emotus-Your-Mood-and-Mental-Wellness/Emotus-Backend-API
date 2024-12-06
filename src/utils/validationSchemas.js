@@ -63,17 +63,20 @@ const photoUploadSchema = [
 ];
 
 const accountSchema = [
-  query('userId').notEmpty().withMessage('userId is required'),
-  body('username').optional().trim()
+  body('username').trim()
     .isLength({ min: 3, max: 30 })
     .withMessage('Username must be between 3 and 30 characters'),
-  body('email').optional().trim().isEmail()
+  body('email').trim().isEmail()
     .withMessage('Invalid email format'),
-  body('password').optional()
+  body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long'),
   body('profilePhotoUrl').optional().isURL()
     .withMessage('Profile photo URL must be a valid URL')
+];
+
+const dailyTipsSchema = [
+  query('userId').notEmpty().withMessage('userId is required')
 ];
 
 module.exports = {
@@ -83,5 +86,6 @@ module.exports = {
   getAnalyticsSchema,
   notificationSettingsSchema,
   photoUploadSchema,
-  accountSchema
+  accountSchema,
+  dailyTipsSchema
 };
