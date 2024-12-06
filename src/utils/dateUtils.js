@@ -11,7 +11,6 @@ const formatDate = (dateString) => {
 };
 
 const isValidDateFormat = (dateString) => {
-  // Updated regex to allow for ISO datetime format with less precision
   const regex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?$/;
   return regex.test(dateString);
 };
@@ -19,7 +18,6 @@ const isValidDateFormat = (dateString) => {
 const parseDate = (dateString, isEndDate = false) => {
   if (!dateString) return null;
   
-  // Create date object and handle timezone offset
   const date = new Date(dateString);
   if (isEndDate) {
     date.setUTCHours(23, 59, 59, 999);
@@ -31,35 +29,47 @@ const parseDate = (dateString, isEndDate = false) => {
 };
 
 const getDateRange = (startDate, endDate, period = 'daily') => {
-  const today = new Date();
   let start, end;
 
   if (startDate && endDate) {
-    // Use the exact dates provided without modification
+    // If explicit dates are provided, use them with proper UTC time
     start = new Date(startDate);
     end = new Date(endDate);
     
-    // Set proper time for start and end
+    // Ensure proper UTC time ranges
     start.setUTCHours(0, 0, 0, 0);
     end.setUTCHours(23, 59, 59, 999);
   } else {
-    end = new Date(today);
-    end.setUTCHours(23, 59, 59, 999);
-
+    // If no dates provided, calculate based on period using UTC
+    const now = new Date();
+    
     switch (period) {
       case 'weekly':
-        start = new Date(today);
-        start.setDate(today.getDate() - 7);
+        end = new Date(now);
+        end.setUTCHours(23, 59, 59, 999);
+        
+        start = new Date(now);
+        start.setUTCDate(start.getUTCDate() - 6); // Last 7 days including today
         start.setUTCHours(0, 0, 0, 0);
         break;
+        
       case 'monthly':
-        start = new Date(today);
-        start.setMonth(today.getMonth() - 1);
+        end = new Date(now);
+        end.setUTCHours(23, 59, 59, 999);
+        
+        start = new Date(now);
+        start.setUTCDate(1); // Start from the first day of current month
         start.setUTCHours(0, 0, 0, 0);
         break;
+        
       default: // daily
-        start = new Date(today);
+        // For daily, use the same date for both start and end
+        start = new Date(now);
         start.setUTCHours(0, 0, 0, 0);
+        
+        end = new Date(now);
+        end.setUTCHours(23, 59, 59, 999);
+        break;
     }
   }
 

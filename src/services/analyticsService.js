@@ -1,27 +1,17 @@
 const { db } = require('../config/firebase');
-const { formatDate, parseDate } = require('../utils/dateUtils');
+const { formatDate, parseDate, getDateRange } = require('../utils/dateUtils');
 
 class AnalyticsService {
-  static async getMoodTrends(userId, startDate, endDate) {
+  static async getMoodTrends(userId, startDate, endDate, period = 'daily') {
     try {
+      const { startDate: start, endDate: end } = getDateRange(startDate, endDate, period);
+      
       const moodRef = db.collection('users').doc(userId).collection('moods');
-      
-      // Create query with date range
-      let query = moodRef;
-      if (startDate) {
-        // Set time to start of day
-        const start = new Date(startDate);
-        start.setHours(0, 0, 0, 0);
-        query = query.where('createdAt', '>=', formatDate(start));
-      }
-      if (endDate) {
-        // Set time to end of day
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        query = query.where('createdAt', '<=', formatDate(end));
-      }
-      
-      query = query.orderBy('createdAt');
+      let query = moodRef
+        .where('createdAt', '>=', formatDate(start))
+        .where('createdAt', '<=', formatDate(end))
+        .orderBy('createdAt');
+
       const snapshot = await query.get();
       const entries = snapshot.docs.map(doc => ({
         ...doc.data(),
@@ -29,6 +19,9 @@ class AnalyticsService {
       }));
 
       return {
+        period,
+        startDate: formatDate(start),
+        endDate: formatDate(end),
         moodDistribution: this.calculateMoodDistribution(entries),
         stressLevelTrend: this.calculateStressLevelTrend(entries),
         commonTriggers: this.analyzeCommonTriggers(entries),
@@ -41,33 +34,16 @@ class AnalyticsService {
   }
 
   static calculateMoodDistribution(entries) {
-    // Initialize with all possible moods
     const distribution = {
-      Happy: {
-        count: 0,
-        percentage: 0
-      },
-      Sadness: {
-        count: 0,
-        percentage: 0
-      },
-      Anger: {
-        count: 0,
-        percentage: 0
-      },
-      Fear: {
-        count: 0,
-        percentage: 0
-      },
-      Love: {
-        count: 0,
-        percentage: 0
-      }
+      Happy: { count: 0, percentage: 0 },
+      Sadness: { count: 0, percentage: 0 },
+      Anger: { count: 0, percentage: 0 },
+      Fear: { count: 0, percentage: 0 },
+      Love: { count: 0, percentage: 0 }
     };
 
-    // Count occurrences of each mood
     entries.forEach(entry => {
-      const mood = (entry.mood || entry.predictedMood || '');
+      const mood = entry.mood || entry.predictedMood;
       if (mood) {
         const standardizedMood = this.standardizeMood(mood);
         if (distribution[standardizedMood]) {
@@ -76,7 +52,6 @@ class AnalyticsService {
       }
     });
 
-    // Calculate percentages
     const total = entries.length;
     if (total > 0) {
       Object.keys(distribution).forEach(mood => {
@@ -106,12 +81,11 @@ class AnalyticsService {
     return entries.map(entry => ({
       date: entry.createdAt,
       stressLevel: entry.stressLevel || 0,
-      mood: (entry.mood || entry.predictedMood || 'Unknown').toLowerCase()
+      mood: (entry.mood || entry.predictedMood || 'Unknown')
     }));
   }
 
   static analyzeCommonTriggers(entries) {
-    // Filter entries with high stress or negative moods
     const significantEntries = entries.filter(entry => {
       const mood = (entry.mood || entry.predictedMood || '').toLowerCase();
       const isNegativeMood = ['sadness', 'anger', 'fear'].includes(mood);
@@ -119,17 +93,12 @@ class AnalyticsService {
       return isNegativeMood || isHighStress;
     });
 
-    // Extract keywords from diary entries
     const keywords = significantEntries
       .filter(entry => entry.diaryEntry)
       .map(entry => this.extractKeywords(entry.diaryEntry))
       .flat();
 
-    // Get top triggers
-    const triggers = this.aggregateCommonWords(keywords);
-    
-    // Return empty array if no triggers found
-    return triggers.length > 0 ? triggers : [];
+    return this.aggregateCommonWords(keywords);
   }
 
   static analyzeTimeOfDay(entries) {
@@ -156,10 +125,8 @@ class AnalyticsService {
   static extractKeywords(text) {
     if (!text) return [];
     
-    // Convert text to lowercase and split into words
     const words = text.toLowerCase().split(/\W+/);
     
-    // Enhanced list of common words to filter out
     const commonWords = new Set([
       'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'a', 'an', 'is', 'are',
       'was', 'were', 'will', 'would', 'could', 'should', 'have', 'has', 'had',
@@ -170,7 +137,6 @@ class AnalyticsService {
       'kamu'
     ]);
 
-    // Filter words: length > 3, not common words, not numbers
     return words.filter(word => 
       word.length > 3 && 
       !commonWords.has(word) && 
