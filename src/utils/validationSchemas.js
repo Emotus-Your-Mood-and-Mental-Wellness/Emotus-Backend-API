@@ -8,8 +8,8 @@ const createMoodSchema = [
     .isIn(['Happy', 'Sad', 'Angry', 'Fearful', 'Love'])
     .withMessage('Invalid mood type'),
   body('stressLevel').optional()
-    .isInt({ min: 1, max: 10 })
-    .withMessage('Stress level must be between 1 and 10')
+    .isIn(['Low', 'Medium', 'High'])
+    .withMessage('Stress level must be Low, Medium, or High')
 ];
 
 const updateMoodSchema = [
@@ -17,7 +17,7 @@ const updateMoodSchema = [
   body('mood').optional()
     .isIn(['Happy', 'Sad', 'Angry', 'Fearful', 'Love']),
   body('stressLevel').optional()
-    .isInt({ min: 1, max: 10 })
+    .isIn(['Low', 'Medium', 'High'])
 ];
 
 const getMoodsSchema = [
@@ -32,7 +32,7 @@ const getAnalyticsSchema = [
     .withMessage('Start date must be in YYYY-MM-DD format'),
   query('endDate').optional().custom(isValidDateFormat)
     .withMessage('End date must be in YYYY-MM-DD format'),
-  query('userId').optional().isString(),
+  query('userId').notEmpty().withMessage('userId is required'),
   query('period').optional().isIn(['daily', 'weekly', 'monthly'])
     .withMessage('Period must be daily, weekly, or monthly')
 ];
@@ -43,11 +43,11 @@ const notificationSettingsSchema = [
   body('dailyReminders').optional().isBoolean(),
   body('reminderTimes').optional().isArray(),
   body('reminderTimes.*').optional().matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
-  query('userId').optional().isString()
+  query('userId').notEmpty().withMessage('userId is required')
 ];
 
 const photoUploadSchema = [
-  query('userId').optional().isString(),
+  query('userId').notEmpty().withMessage('userId is required'),
   body('photo').custom((value, { req }) => {
     if (!req.file) {
       throw new Error('Profile photo is required');
@@ -63,6 +63,7 @@ const photoUploadSchema = [
 ];
 
 const accountSchema = [
+  query('userId').notEmpty().withMessage('userId is required'),
   body('username').optional().trim()
     .isLength({ min: 3, max: 30 })
     .withMessage('Username must be between 3 and 30 characters'),
@@ -72,8 +73,7 @@ const accountSchema = [
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long'),
   body('profilePhotoUrl').optional().isURL()
-    .withMessage('Profile photo URL must be a valid URL'),
-  query('userId').optional().isString()
+    .withMessage('Profile photo URL must be a valid URL')
 ];
 
 module.exports = {
