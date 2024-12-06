@@ -1,14 +1,5 @@
 const { db } = require('../config/firebase');
 const { formatDate } = require('../utils/dateUtils');
-const { getRandomElement } = require('../utils/moodSuggestionHelper');
-const {
-  happyTips,
-  sadnessTips,
-  fearTips,
-  loveTips,
-  angerTips,
-  generalTips
-} = require('../utils/tipCategories');
 
 class DailyTipsService {
   static async getDailyTip(userId) {
@@ -28,8 +19,7 @@ class DailyTipsService {
       
       if (entries.length === 0) {
         return {
-          message: "Belum ada catatan mood hari ini. Tambahkan beberapa entri untuk mendapatkan tips yang dipersonalisasi!",
-          ...this.getFormattedTips('general')
+          message: "Belum ada catatan mood hari ini."
         };
       }
 
@@ -61,27 +51,6 @@ class DailyTipsService {
       console.error('Get daily tip error:', error);
       throw new Error('Gagal mendapatkan tip harian');
     }
-  }
-
-  static getFormattedTips(mood) {
-    const tipCategories = {
-      happy: happyTips,
-      sadness: sadnessTips,
-      fear: fearTips,
-      love: loveTips,
-      anger: angerTips,
-      general: generalTips
-    };
-
-    const selectedTips = tipCategories[mood] || generalTips;
-    const relaxationExercise = getRandomElement(selectedTips.relaxationExercise);
-
-    return {
-      "Take a Moment for Yourself": getRandomElement(selectedTips.takeMoment),
-      "Kind Reminder": getRandomElement(selectedTips.kindReminder),
-      "Quick Activity": getRandomElement(selectedTips.quickActivity),
-      "Relaxation Exercise": `\n${relaxationExercise}`
-    };
   }
 }
 

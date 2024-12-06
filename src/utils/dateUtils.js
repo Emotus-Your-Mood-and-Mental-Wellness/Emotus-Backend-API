@@ -42,34 +42,23 @@ const getDateRange = (startDate, endDate, period = 'daily') => {
   } else {
     // If no dates provided, calculate based on period using UTC
     const now = new Date();
+    end = new Date(now);
+    end.setUTCHours(23, 59, 59, 999);
     
+    start = new Date(now);
+    start.setUTCHours(0, 0, 0, 0);
+
     switch (period) {
       case 'weekly':
-        end = new Date(now);
-        end.setUTCHours(23, 59, 59, 999);
-        
-        start = new Date(now);
         start.setUTCDate(start.getUTCDate() - 6); // Last 7 days including today
-        start.setUTCHours(0, 0, 0, 0);
         break;
         
       case 'monthly':
-        end = new Date(now);
-        end.setUTCHours(23, 59, 59, 999);
-        
-        start = new Date(now);
-        start.setUTCDate(1); // Start from the first day of current month
-        start.setUTCHours(0, 0, 0, 0);
+        // Calculate start date as 30 days before current date
+        start.setUTCDate(start.getUTCDate() - 30);
         break;
         
-      default: // daily
-        // For daily, use the same date for both start and end
-        start = new Date(now);
-        start.setUTCHours(0, 0, 0, 0);
-        
-        end = new Date(now);
-        end.setUTCHours(23, 59, 59, 999);
-        break;
+      // daily is the default, no need to modify start date
     }
   }
 
