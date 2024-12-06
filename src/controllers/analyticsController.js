@@ -1,5 +1,6 @@
 const AnalyticsService = require('../services/analyticsService');
 const SummaryService = require('../services/summaryService');
+const { getDateRange } = require('../utils/dateUtils');
 
 class AnalyticsController {
   static async getMoodTrends(req, res) {
@@ -20,19 +21,23 @@ class AnalyticsController {
     }
   }
 
-  static async getSummary(req, res) {
+  static async getDailySummary(req, res) {
     try {
-      const { startDate, endDate, period } = req.query;
+      const { period, startDate, endDate } = req.query;
       const userId = req.query.userId || 'default-user';
 
-      const summary = await SummaryService.generateSummary(
-        userId,
-        startDate || new Date(),
-        endDate || new Date(),
-        period || 'daily'
-      );
+      const { startDate: start, endDate: end } = getDateRange(startDate, endDate, period);
+      const summary = await SummaryService.generateDailySummary(userId, start, end);
 
-      res.json(summary);
+      // Add period information to the response
+      const response = {
+        period: period || 'daily',
+        startDate: start.toISOString().split('T')[0],
+        endDate: end.toISOString().split('T')[0],
+        ...summary
+      };
+
+      res.json(response);
     } catch (error) {
       console.error('Get summary error:', error);
       res.status(500).json({ error: error.message });

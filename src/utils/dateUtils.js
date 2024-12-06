@@ -1,54 +1,65 @@
 const formatDate = (dateString) => {
   const date = new Date(dateString);
-  return date.toISOString().split('T')[0];
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const hours = String(date.getUTCHours()).padStart(2, '0');
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 };
 
 const isValidDateFormat = (dateString) => {
-  const regex = /^\d{4}-\d{2}-\d{2}$/;
+  // Updated regex to allow for ISO datetime format with less precision
+  const regex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?$/;
   return regex.test(dateString);
 };
 
 const parseDate = (dateString, isEndDate = false) => {
   if (!dateString) return null;
+  
+  // Create date object and handle timezone offset
   const date = new Date(dateString);
   if (isEndDate) {
-    // Set to end of day (23:59:59.999)
-    date.setHours(23, 59, 59, 999);
+    date.setUTCHours(23, 59, 59, 999);
   } else {
-    // Set to start of day (00:00:00.000)
-    date.setHours(0, 0, 0, 0);
+    date.setUTCHours(0, 0, 0, 0);
   }
+  
   return date;
 };
 
 const getDateRange = (startDate, endDate, period = 'daily') => {
-  const start = parseDate(startDate);
-  const end = parseDate(endDate, true);
+  const today = new Date();
+  let start, end;
 
-  if (!start || !end) {
-    const today = new Date();
-    if (period === 'weekly') {
-      // Get last 7 days
-      const weekAgo = new Date(today);
-      weekAgo.setDate(today.getDate() - 7);
-      return {
-        startDate: weekAgo,
-        endDate: today
-      };
-    } else if (period === 'monthly') {
-      // Get last 30 days
-      const monthAgo = new Date(today);
-      monthAgo.setDate(today.getDate() - 30);
-      return {
-        startDate: monthAgo,
-        endDate: today
-      };
-    } else {
-      // Daily - just today
-      return {
-        startDate: today,
-        endDate: today
-      };
+  if (startDate && endDate) {
+    // Use the exact dates provided without modification
+    start = new Date(startDate);
+    end = new Date(endDate);
+    
+    // Set proper time for start and end
+    start.setUTCHours(0, 0, 0, 0);
+    end.setUTCHours(23, 59, 59, 999);
+  } else {
+    end = new Date(today);
+    end.setUTCHours(23, 59, 59, 999);
+
+    switch (period) {
+      case 'weekly':
+        start = new Date(today);
+        start.setDate(today.getDate() - 7);
+        start.setUTCHours(0, 0, 0, 0);
+        break;
+      case 'monthly':
+        start = new Date(today);
+        start.setMonth(today.getMonth() - 1);
+        start.setUTCHours(0, 0, 0, 0);
+        break;
+      default: // daily
+        start = new Date(today);
+        start.setUTCHours(0, 0, 0, 0);
     }
   }
 

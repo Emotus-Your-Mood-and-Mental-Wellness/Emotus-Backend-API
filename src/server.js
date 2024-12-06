@@ -10,6 +10,7 @@ const moodRoutes = require('./routes/moodRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const userRoutes = require('./routes/userRoutes');
+const accountRoutes = require('./routes/accountRoutes');
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use('/api/moods', moodRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/account', accountRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

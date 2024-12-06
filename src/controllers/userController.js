@@ -16,21 +16,21 @@ class UserController {
       // Upload to Google Cloud Storage
       const imageUrl = await uploadProfilePhoto(fileName, req.file.buffer);
 
-      // Update user profile in Firestore
-      const userRef = db.collection('users').doc(userId);
-      const user = await userRef.get();
+      // Update account info in Firestore
+      const accountRef = db.collection('users').doc(userId).collection('account').doc('info');
+      const accountDoc = await accountRef.get();
 
-      if (user.exists) {
+      if (accountDoc.exists) {
         // Delete old photo if exists
-        const oldPhotoUrl = user.data().profilePhotoUrl;
+        const oldPhotoUrl = accountDoc.data().profilePhotoUrl;
         if (oldPhotoUrl) {
           await deleteProfilePhoto(oldPhotoUrl);
         }
       }
 
-      // Update user document with new photo URL
-      await userRef.set({
-        ...user.data(),
+      // Update account document with new photo URL
+      await accountRef.set({
+        ...accountDoc.data(),
         profilePhotoUrl: imageUrl,
         updatedAt: new Date().toISOString()
       }, { merge: true });
@@ -45,14 +45,14 @@ class UserController {
   static async deletePhoto(req, res) {
     try {
       const userId = req.query.userId || 'default-user';
-      const userRef = db.collection('users').doc(userId);
-      const user = await userRef.get();
+      const accountRef = db.collection('users').doc(userId).collection('account').doc('info');
+      const accountDoc = await accountRef.get();
 
-      if (!user.exists) {
-        return res.status(404).json({ error: 'User not found' });
+      if (!accountDoc.exists) {
+        return res.status(404).json({ error: 'Account not found' });
       }
 
-      const photoUrl = user.data().profilePhotoUrl;
+      const photoUrl = accountDoc.data().profilePhotoUrl;
       if (!photoUrl) {
         return res.status(404).json({ error: 'No profile photo found' });
       }
@@ -60,8 +60,8 @@ class UserController {
       // Delete from Google Cloud Storage
       await deleteProfilePhoto(photoUrl);
 
-      // Update user document
-      await userRef.update({
+      // Update account document
+      await accountRef.update({
         profilePhotoUrl: null,
         updatedAt: new Date().toISOString()
       });

@@ -62,11 +62,26 @@ const photoUploadSchema = [
   })
 ];
 
+const accountSchema = [
+  body('username').optional().trim()
+    .isLength({ min: 3, max: 30 })
+    .withMessage('Username must be between 3 and 30 characters'),
+  body('email').optional().trim().isEmail()
+    .withMessage('Invalid email format'),
+  body('password').optional()
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long'),
+  body('profilePhotoUrl').optional().isURL()
+    .withMessage('Profile photo URL must be a valid URL'),
+  query('userId').optional().isString()
+];
+
 module.exports = {
   createMoodSchema,
   updateMoodSchema,
   getMoodsSchema,
   getAnalyticsSchema,
   notificationSettingsSchema,
-  photoUploadSchema
+  photoUploadSchema,
+  accountSchema
 };

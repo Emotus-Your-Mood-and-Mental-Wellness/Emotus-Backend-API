@@ -8,7 +8,7 @@ const router = express.Router();
 // Get mood trends
 router.get('/trends', getAnalyticsSchema, validateRequest, AnalyticsController.getMoodTrends);
 
-// Get summary (daily, weekly, or monthly)
-router.get('/summary', getAnalyticsSchema, validateRequest, AnalyticsController.getSummary);
+// Get daily/weekly/monthly summary
+router.get('/summary', getAnalyticsSchema, validateRequest, AnalyticsController.getDailySummary);
 
 module.exports = router;
