@@ -1,5 +1,14 @@
 const { db } = require('../config/firebase');
 const { formatDate } = require('../utils/dateUtils');
+const { getRandomElement } = require('../utils/moodSuggestionHelper');
+const {
+  happyTips,
+  sadnessTips,
+  fearTips,
+  loveTips,
+  angerTips,
+  generalTips
+} = require('../utils/tipCategories');
 
 class DailyTipsService {
   static async getDailyTip(userId) {
@@ -13,18 +22,23 @@ class DailyTipsService {
       const snapshot = await moodRef
         .where('createdAt', '>=', formatDate(today))
         .where('createdAt', '<', formatDate(tomorrow))
+        .orderBy('createdAt', 'desc')
         .get();
 
-      const entries = snapshot.docs.map(doc => doc.data());
+      const entries = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
       
       if (entries.length === 0) {
         return {
-          message: "Belum ada catatan mood hari ini."
+          message: "Belum ada catatan mood hari ini. Tambahkan beberapa entri untuk mendapatkan tips yang dipersonalisasi!",
+          ...this.getFormattedTips('general')
         };
       }
 
       const moodCounts = entries.reduce((acc, entry) => {
-        const mood = entry.mood || entry.predictedMood;
+        const mood = entry.mood || entry.predictedMood || 'Happy';
         acc[mood] = (acc[mood] || 0) + 1;
         return acc;
       }, {});
@@ -49,8 +63,29 @@ class DailyTipsService {
       };
     } catch (error) {
       console.error('Get daily tip error:', error);
-      throw new Error('Gagal mendapatkan tip harian');
+      throw new Error('Failed to get daily tip: ' + error.message);
     }
+  }
+
+  static getFormattedTips(mood) {
+    const tipCategories = {
+      happy: happyTips,
+      sadness: sadnessTips,
+      fear: fearTips,
+      love: loveTips,
+      anger: angerTips,
+      general: generalTips
+    };
+
+    const selectedTips = tipCategories[mood] || generalTips;
+    const relaxationExercise = getRandomElement(selectedTips.relaxationExercise);
+
+    return {
+      "Take a Moment for Yourself": getRandomElement(selectedTips.takeMoment),
+      "Kind Reminder": getRandomElement(selectedTips.kindReminder),
+      "Quick Activity": getRandomElement(selectedTips.quickActivity),
+      "Relaxation Exercise": relaxationExercise
+    };
   }
 }
 
