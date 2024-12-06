@@ -302,7 +302,7 @@ The API implements rate limiting to prevent abuse:
 
 All endpoints implement input validation:
 - Dates must be in YYYY-MM-DD format
-- Mood values must be one of: Happy, Sad, Angry, Fearful, Love
+- Mood values must be one of: Happy, Sad, Angry, Love, Fearful
 - Stress levels must be one of: Low, Medium, High
 - File uploads limited to 5MB
 - Username length: 3-30 characters
