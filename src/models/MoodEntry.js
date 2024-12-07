@@ -31,6 +31,9 @@ class MoodEntry {
       // Standardize mood format
       const standardizedMood = this.standardizeMood(prediction.predicted_mood);
       
+      const now = new Date();
+      const timestamp = now.toISOString();
+
       const newEntry = {
         ...sanitizedData,
         userId,
@@ -40,8 +43,8 @@ class MoodEntry {
         sympathyMessage: prediction.sympathy_message,
         thoughtfulSuggestions: prediction.thoughtful_suggestions,
         thingsToDo: prediction.things_to_do,
-        createdAt: formatDate(new Date()),
-        updatedAt: formatDate(new Date())
+        createdAt: timestamp,
+        updatedAt: timestamp
       };
 
       const docRef = await moodRef.add(newEntry);
@@ -52,7 +55,7 @@ class MoodEntry {
     }
   }
 
-  static async getAll(userId = 'default-user', startDate, endDate) {
+  static async getAll(userId = 'default-user', startDate, endDate, period = 'daily') {
     try {
       const filters = [];
       if (startDate) {
@@ -69,10 +72,18 @@ class MoodEntry {
       );
 
       const snapshot = await query.get();
-      return snapshot.docs.map(doc => ({
+      const entries = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+
+      return {
+        data: entries,
+        total: entries.length,
+        startDate: startDate || new Date().toISOString().split('T')[0] + 'T00:00:00',
+        endDate: endDate || new Date().toISOString().split('T')[0] + 'T23:59:59',
+        period
+      };
     } catch (error) {
       console.error('Get mood entries error:', error);
       throw new Error('Error fetching mood entries: ' + error.message);
@@ -100,6 +111,9 @@ class MoodEntry {
       } else if (sanitizedData.mood) {
         predictionData.mood = this.standardizeMood(sanitizedData.mood);
       }
+
+      const now = new Date();
+      const timestamp = now.toISOString();
       
       await FirebaseUtils.runTransaction(async (transaction) => {
         const doc = await transaction.get(entryRef);
@@ -110,7 +124,7 @@ class MoodEntry {
         transaction.update(entryRef, {
           ...sanitizedData,
           ...predictionData,
-          updatedAt: formatDate(new Date())
+          updatedAt: timestamp
         });
       });
 

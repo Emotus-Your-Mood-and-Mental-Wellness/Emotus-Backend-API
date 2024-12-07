@@ -1,4 +1,5 @@
 const MoodEntry = require('../models/MoodEntry');
+const { getDateRange } = require('../utils/dateUtils');
 
 class MoodController {
   static async createMoodEntry(req, res) {
@@ -15,15 +16,22 @@ class MoodController {
 
   static async getMoodEntries(req, res) {
     try {
-      const { startDate, endDate } = req.query;
+      const { startDate, endDate, period = 'daily' } = req.query;
       const userId = req.query.userId || 'default-user';
-      const entries = await MoodEntry.getAll(userId, startDate, endDate);
-      res.json({
-        data: entries,
-        total: entries.length,
-        startDate,
-        endDate
-      });
+
+      let dateRange;
+      if (startDate && endDate) {
+        dateRange = { startDate, endDate };
+      } else {
+        dateRange = getDateRange(null, null, period);
+        dateRange = {
+          startDate: dateRange.startDate.toISOString(),
+          endDate: dateRange.endDate.toISOString()
+        };
+      }
+
+      const entries = await MoodEntry.getAll(userId, dateRange.startDate, dateRange.endDate, period);
+      res.json(entries);
     } catch (error) {
       console.error('Get mood entries error:', error);
       res.status(500).json({ error: error.message });

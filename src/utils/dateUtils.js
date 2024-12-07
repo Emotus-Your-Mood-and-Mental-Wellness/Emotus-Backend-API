@@ -1,13 +1,6 @@
 const formatDate = (dateString) => {
   const date = new Date(dateString);
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  const hours = String(date.getUTCHours()).padStart(2, '0');
-  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-  const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-  
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  return date.toISOString();
 };
 
 const isValidDateFormat = (dateString) => {
@@ -20,9 +13,9 @@ const parseDate = (dateString, isEndDate = false) => {
   
   const date = new Date(dateString);
   if (isEndDate) {
-    date.setUTCHours(23, 59, 59, 999);
+    date.setHours(23, 59, 59, 999);
   } else {
-    date.setUTCHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
   }
   
   return date;
@@ -32,37 +25,43 @@ const getDateRange = (startDate, endDate, period = 'daily') => {
   let start, end;
 
   if (startDate && endDate) {
-    // If explicit dates are provided, use them with proper UTC time
+    // If explicit dates are provided, use them
     start = new Date(startDate);
     end = new Date(endDate);
-    
-    // Ensure proper UTC time ranges
-    start.setUTCHours(0, 0, 0, 0);
-    end.setUTCHours(23, 59, 59, 999);
   } else {
-    // If no dates provided, calculate based on period using UTC
+    // If no dates provided, calculate based on period
     const now = new Date();
-    end = new Date(now);
-    end.setUTCHours(23, 59, 59, 999);
-    
-    start = new Date(now);
-    start.setUTCHours(0, 0, 0, 0);
+    end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     switch (period) {
       case 'weekly':
-        start.setUTCDate(start.getUTCDate() - 6); // Last 7 days including today
+        // Start from beginning of current week (last 7 days)
+        start = new Date(end);
+        start.setDate(end.getDate() - 6);
         break;
         
       case 'monthly':
-        // Calculate start date as 30 days before current date
-        start.setUTCDate(start.getUTCDate() - 30);
+        // Start from same day last month
+        start = new Date(end);
+        start.setMonth(end.getMonth() - 1);
         break;
         
-      // daily is the default, no need to modify start date
+      case 'daily':
+      default:
+        // For daily, start and end are the same date
+        start = new Date(end);
+        break;
     }
   }
 
-  return { startDate: start, endDate: end };
+  // Set time ranges for the dates
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+
+  return { 
+    startDate: start,
+    endDate: end
+  };
 };
 
 module.exports = {

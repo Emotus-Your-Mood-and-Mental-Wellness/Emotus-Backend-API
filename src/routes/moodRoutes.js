@@ -12,7 +12,7 @@ const router = express.Router();
 // Create new mood entry
 router.post('/', createMoodSchema, validateRequest, MoodController.createMoodEntry);
 
-// Get mood entries with optional date filtering
+// Get mood entries with optional date filtering and period
 router.get('/', getMoodsSchema, validateRequest, MoodController.getMoodEntries);
 
 // Update mood entry

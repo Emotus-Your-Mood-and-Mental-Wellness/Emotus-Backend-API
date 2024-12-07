@@ -13,15 +13,16 @@ const {
 class DailyTipsService {
   static async getDailyTip(userId) {
     try {
+      // Get today's date at midnight
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(startOfDay);
+      endOfDay.setHours(23, 59, 59, 999);
 
       const moodRef = db.collection('users').doc(userId).collection('moods');
       const snapshot = await moodRef
-        .where('createdAt', '>=', formatDate(today))
-        .where('createdAt', '<', formatDate(tomorrow))
+        .where('createdAt', '>=', formatDate(startOfDay))
+        .where('createdAt', '<=', formatDate(endOfDay))
         .orderBy('createdAt', 'desc')
         .get();
 
@@ -32,8 +33,7 @@ class DailyTipsService {
       
       if (entries.length === 0) {
         return {
-          message: "Belum ada catatan mood hari ini. Tambahkan beberapa entri untuk mendapatkan tips yang dipersonalisasi!",
-          ...this.getFormattedTips('general')
+          message: "There are no mood notes today. Add some entries to get personalized tips!"
         };
       }
 
