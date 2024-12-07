@@ -7,25 +7,26 @@ const { getRandomFeelInspire } = require('../utils/feelInspireMessages');
 class SummaryService {
   static async generateDailySummary(userId, startDate, endDate, period = 'daily') {
     try {
-      const dateRange = startDate && endDate 
-        ? { startDate, endDate }
-        : getDateRange(null, null, period);
-
+      const { startDate: start, endDate: end } = getDateRange(startDate, endDate, period);
+      
       const moodRef = db.collection('users').doc(userId).collection('moods');
       const query = moodRef
-        .where('createdAt', '>=', dateRange.startDate)
-        .where('createdAt', '<=', dateRange.endDate)
+        .where('createdAt', '>=', formatDate(start))
+        .where('createdAt', '<=', formatDate(end))
         .orderBy('createdAt');
 
       const snapshot = await query.get();
-      const entries = snapshot.docs.map(doc => doc.data());
+      const entries = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
 
       // If no entries found, return a simplified response
       if (entries.length === 0) {
         const periodText = this.getPeriodText(period);
         return {
-          startDate: dateRange.startDate,
-          endDate: dateRange.endDate,
+          startDate: formatDate(start),
+          endDate: formatDate(end),
           totalEntries: 0,
           message: `Belum ada catatan mood untuk ${periodText}. Tambahkan entri mood untuk mendapatkan analisis dan saran yang dipersonalisasi.`
         };
@@ -46,8 +47,9 @@ class SummaryService {
       // Count occurrences of each stress level
       const stressLevelCounts = entries.reduce((acc, entry) => {
         const stressLevel = entry.stressLevel;
-        if (stressLevel && ['Low', 'Medium', 'High'].includes(stressLevel)) {
-          acc[stressLevel] = (acc[stressLevel] || 0) + 1;
+        if (stressLevel !== undefined && stressLevel !== null) {
+          const level = this.categorizeStressLevel(stressLevel);
+          acc[level] = (acc[level] || 0) + 1;
         }
         return acc;
       }, {});
@@ -72,11 +74,17 @@ class SummaryService {
       const feelInspire = getRandomFeelInspire(dominantMood);
 
       return {
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
+        startDate: formatDate(start),
+        endDate: formatDate(end),
         totalEntries: entries.length,
         dominantMood,
         dominantStressLevel,
+        entries: entries.map(entry => ({
+          id: entry.id,
+          mood: entry.mood || entry.predictedMood,
+          stressLevel: entry.stressLevel,
+          createdAt: entry.createdAt
+        })),
         ...messages,
         helpfulHint,
         feelInspire,
@@ -86,6 +94,12 @@ class SummaryService {
       console.error('Summary generation error:', error);
       throw new Error('Failed to generate daily summary');
     }
+  }
+
+  static categorizeStressLevel(level) {
+    if (level <= 3) return 'Low';
+    if (level <= 7) return 'Medium';
+    return 'High';
   }
 
   static getPeriodText(period) {

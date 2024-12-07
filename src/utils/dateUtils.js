@@ -30,26 +30,24 @@ const getDateRange = (startDate, endDate, period = 'daily') => {
     end = new Date(endDate);
   } else {
     // If no dates provided, calculate based on period
-    const now = new Date();
-    end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    end = new Date();
+    start = new Date(end);
 
     switch (period) {
       case 'weekly':
         // Start from beginning of current week (last 7 days)
-        start = new Date(end);
         start.setDate(end.getDate() - 6);
         break;
         
       case 'monthly':
         // Start from same day last month
-        start = new Date(end);
         start.setMonth(end.getMonth() - 1);
         break;
         
       case 'daily':
       default:
-        // For daily, start and end are the same date
-        start = new Date(end);
+        // For daily, start is beginning of current day
+        start.setHours(0, 0, 0, 0);
         break;
     }
   }
