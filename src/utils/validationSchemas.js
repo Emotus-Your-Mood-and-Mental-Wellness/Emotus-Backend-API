@@ -66,7 +66,7 @@ const accountSchema = [
   body('username').trim()
     .isLength({ min: 3, max: 30 })
     .withMessage('Username must be between 3 and 30 characters'),
-  body('email').trim().isEmail()
+  body('email').optional().trim().isEmail()
     .withMessage('Invalid email format'),
   body('password')
     .isLength({ min: 6 })

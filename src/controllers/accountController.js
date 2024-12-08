@@ -51,7 +51,7 @@ class AccountController {
 
   async register(req, res) {
     try {
-      const { username, email, password } = req.body;
+      const { username, password, email } = req.body;
       
       // Generate next user ID
       const userId = await this.generateNextUserId();
@@ -66,21 +66,33 @@ class AccountController {
       }
       
       // Create the user document
-      await userRef.set({
+      const userData = {
         userId,
         username,
-        email,
-        password, // Note: In production, ensure password is hashed
+        password,
         createdAt: new Date().toISOString()
-      });
+      };
+
+      // Only add email if it's provided
+      if (email) {
+        userData.email = email;
+      }
+
+      await userRef.set(userData);
 
       // Create account info subcollection
       const accountRef = userRef.collection('account').doc('info');
-      await accountRef.set({
+      const accountData = {
         username,
-        email,
         createdAt: new Date().toISOString()
-      });
+      };
+
+      // Only add email to account info if it's provided
+      if (email) {
+        accountData.email = email;
+      }
+
+      await accountRef.set(accountData);
 
       // Return success message with userId
       res.status(201).json({ 
