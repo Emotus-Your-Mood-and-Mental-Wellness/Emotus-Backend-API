@@ -82,13 +82,48 @@ class AccountController {
         createdAt: new Date().toISOString()
       });
 
-      // Return success message without userId
+      // Return success message with userId
       res.status(201).json({ 
-        message: 'Account created successfully'
+        message: 'Account created successfully',
+        userId: userId
       });
     } catch (error) {
       console.error('Registration error:', error);
       res.status(500).json({ error: 'Failed to create account' });
+    }
+  }
+
+  async login(req, res) {
+    try {
+      const { userId, password } = req.body;
+
+      // Get user document
+      const userRef = db.collection('users').doc(userId);
+      const userDoc = await userRef.get();
+
+      if (!userDoc.exists) {
+        return res.status(401).json({ 
+          error: 'Wrong password, try checking the password and userId again' 
+        });
+      }
+
+      const userData = userDoc.data();
+      
+      // Check password
+      if (userData.password !== password) {
+        return res.status(401).json({ 
+          error: 'Wrong password, try checking the password and userId again' 
+        });
+      }
+
+      // Return success response
+      res.json({
+        userId: userId,
+        message: 'login successful'
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ error: 'Failed to login' });
     }
   }
 
@@ -124,7 +159,11 @@ class AccountController {
         return res.status(404).json({ error: 'Account information not found' });
       }
 
-      res.json(doc.data());
+      // Include userId in the response along with account info
+      res.json({
+        userId: userId,
+        ...doc.data()
+      });
     } catch (error) {
       console.error('Get account info error:', error);
       res.status(500).json({ error: error.message });

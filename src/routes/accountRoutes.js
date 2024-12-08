@@ -14,6 +14,11 @@ router.post('/register',
   (req, res) => accountController.register(req, res)
 );
 
+// Login route
+router.post('/login',
+  (req, res) => accountController.login(req, res)
+);
+
 // Save or update account information (requires userId)
 router.post('/', 
   (req, res, next) => {
