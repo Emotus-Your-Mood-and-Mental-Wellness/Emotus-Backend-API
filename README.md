@@ -18,6 +18,87 @@ Example: `https://emotus-backend-api-1089286517825.asia-southeast2.run.app/api/m
 
 ## Endpoints
 
+### Account Management
+
+#### Register Account
+```http
+POST /account/register
+```
+
+Creates a new user account.
+
+Request Body:
+```json
+{
+  "username": "emotus",
+  "password": "emotus2024",
+  "email": "emotus@gmail.com" // Optional
+}
+```
+
+Response:
+```json
+{
+  "message": "Account created successfully",
+  "userId": "user123"
+}
+```
+
+#### Login
+```http
+POST /account/login
+```
+
+Login to the account.
+
+Request Body:
+```json
+{
+  "userId": "user123",
+  "password": "emotus2024"
+}
+```
+
+Response:
+```json
+{
+  "userId": "user123",
+  "message": "login successful"
+}
+```
+
+#### Get Account Information
+```http
+GET /account?userId={userId}
+```
+
+Updates user account information.
+
+Response:
+```json
+{
+  "username": "emotus",
+  "email": "emotus@gmail.com",
+  "createdAt": "2024-12-07T12:10:01.736Z",
+  "profilePhotoUrl": "https://storage.googleapis.com/emotus-project.firebasestorage.app/profile-photos/user17/bfc44846-b066-4078-90b5-8c1a9ffffcf5.png",
+  "updatedAt": "2024-12-07T12:10:46.376Z"
+}
+```
+
+#### Update Account Information
+```http
+PUT /account?userId={userId}
+```
+Updates user account information.
+
+Request Body:
+```json
+{
+  "username": "emotus mood",
+  "email": "emotus@gmail.com"
+}
+```
+
 ### Mood Entries
 
 #### Create Mood Entry
@@ -215,55 +296,6 @@ Response:
   "Kind Reminder": "Kebahagiaan adalah pilihan, dan hari ini kamu sudah memilih untuk bahagia.",
   "Quick Activity": "Tuliskan 3 hal yang membuatmu tersenyum hari ini",
   "Relaxation Exercise": "Mari maksimalkan mood baikmu dengan latihan mindfulness..."
-}
-```
-
-### Account Management
-
-#### Save Account Information
-```http
-POST /account/register
-```
-Creates a new user account.
-
-Request Body:
-```json
-{
-  "username": "emotus",
-  "email": "emotus@gmail.com",
-  "password": "emotus2024"
-}
-```
-
-#### Get Account Information
-```http
-GET /account?userId={userId}
-```
-
-Updates user account information.
-
-Response:
-```json
-{
-  "username": "emotus",
-  "email": "emotus@gmail.com",
-  "createdAt": "2024-12-07T12:10:01.736Z",
-  "profilePhotoUrl": "https://storage.googleapis.com/emotus-project.firebasestorage.app/profile-photos/user17/bfc44846-b066-4078-90b5-8c1a9ffffcf5.png",
-  "updatedAt": "2024-12-07T12:10:46.376Z"
-}
-```
-
-#### Update Account Information
-```http
-PUT /account?userId={userId}
-```
-Updates user account information.
-
-Request Body:
-```json
-{
-  "username": "johndoe_updated",
-  "email": "john_new@example.com"
 }
 ```
 
@@ -471,10 +503,25 @@ curl "https://emotus-backend-api-1089286517825.asia-southeast2.run.app/api/analy
 
 ## Data Validation
 
-All endpoints implement input validation:
-- Dates must be in YYYY-MM-DD format
-- Mood values must be one of: Happy, Sad, Angry, Love, Fearful
-- Stress levels must be one of: Low, Medium, High
-- File uploads limited to 5MB
-- Username length: 3-30 characters
-- Password minimum length: 6 characters
+1. Account
+   - Username: 3-30 characters
+   - Password: Minimum 6 characters
+   - Email: Optional, valid email format if provided
+
+2. Mood Entries
+   - Diary Entry: Required, non-empty string
+
+3. Dates
+   - Format: YYYY-MM-DD
+   - Time ranges: startDate must be before endDate
+   - Future dates not allowed
+
+4. Files
+   - Profile photos: Max 5MB
+   - Supported formats: image/jpeg, image/png
+   - Aspect ratio: 1:1 recommended
+
+5. Notifications
+   - Reminder times: 24-hour format (HH:mm)
+   - Maximum 5 reminder times per user
+   - Boolean flags for notification types
