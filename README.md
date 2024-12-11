@@ -1,4 +1,9 @@
-# Emotus API Documentation
+# Emotus Cloud Computing Documentation
+
+## Cloud Architecture
+<img width="2706" alt="Untitled (7)" src="https://github.com/user-attachments/assets/980186ed-a46f-4c91-8f40-eb9e2e817fa6">
+
+# Emotus Backend API Documentation
 
 ## Overview
 Emotus is a comprehensive mood tracking and emotional wellness platform that helps users monitor, analyze, and understand their emotional states. The API provides sophisticated mood analysis, personalized recommendations, and detailed analytics to support users' emotional well-being journey.
@@ -525,3 +530,47 @@ curl "https://emotus-backend-api-1089286517825.asia-southeast2.run.app/api/analy
    - Reminder times: 24-hour format (HH:mm)
    - Maximum 5 reminder times per user
    - Boolean flags for notification types
+
+# Cloud Computing Tools
+![Untitled design (20)](https://github.com/user-attachments/assets/21407885-508f-491f-a0a6-7162241754e1)
+### Visual Studio Code
+<p align="justify">
+Visual Studio Code serves as our primary IDE for writing and debugging backend code. Its lightweight and powerful features streamlined our development process.
+</p>
+
+### Node.js / ExpressJS
+<p align="justify">
+Node.js with ExpressJS powers our backend API. It helps manage routes, handle HTTP requests, and integrates seamlessly with other components of the app.
+</p>
+
+### Google Cloud Platform
+<p align="justify">
+Google Cloud provides the infrastructure for our app. We use Cloud Run to deploy the backend API and Cloud Firestore for secure and scalable data storage, enabling the app to handle growing user demands efficiently.
+</p>
+
+### Firebase
+<p align="justify">
+We are using Firebase for real-time data synchronization, ensuring that user data, mood entries, and other app-related information are always up-to-date across devices.
+</p>
+
+### Postman
+<p align="justify">
+Postman is used to test and debug our APIs, ensuring that data flow and responses work as expected before deployment.
+</p>
+
+# Cloud Services Used
+## Deployment
+- <img src="https://github.com/user-attachments/assets/1c24dc96-d22f-474e-b24d-db0b4aadcf15" width="400" />
+<p align="justify">
+The backend API and machine learning model are both deployed on Cloud Run, enabling serverless and scalable management of requests. The backend API, built with Express.js, efficiently handles routing and backend logic, while the machine learning model processes user inputs to provide real-time mood predictions and personalized recommendations, seamlessly interacting with the backend API.
+</p>
+
+## Database & Storage
+- <img src="https://github.com/user-attachments/assets/29b5e7ff-a6c5-4036-9cf4-dc6694d21a7e" width="400" />
+- <img src="https://github.com/user-attachments/assets/a44a27ee-9e5c-42f8-83e0-47e51a6f980b" width="400" />
+<p align="justify">
+1.Cloud Firestore is used as a scalable and high-performance irelational database for storing user mood entries, recommendations, and app-related data.
+</p>
+<p align="justify">
+2.Cloud Storage handles media files, such as user-uploaded images, ensuring secure and efficient file management.
+</p>
