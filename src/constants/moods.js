@@ -1,4 +1,3 @@
-// Define mood constants
 const MOODS = {
     HAPPY: 'Happy',
     SADNESS: 'Sadness',
@@ -7,7 +6,6 @@ const MOODS = {
     LOVE: 'Love'
   };
   
-  // Get array of valid moods
   const VALID_MOODS = Object.values(MOODS);
   
   module.exports = {

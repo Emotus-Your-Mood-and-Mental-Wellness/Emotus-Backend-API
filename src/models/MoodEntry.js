@@ -16,7 +16,6 @@ class MoodEntry {
       const moodRef = userRef.collection('moods');
       const sanitizedData = sanitizeEntry(entryData);
       
-      // Get ML prediction if there's diary entry
       let predictionData = {};
       if (sanitizedData.diaryEntry) {
         const prediction = await MLService.predictMood(sanitizedData.diaryEntry);

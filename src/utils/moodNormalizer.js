@@ -1,8 +1,6 @@
 const { MOODS } = require('../constants/moods');
 
-// Mapping of various mood inputs to standardized format
 const moodMappings = {
-  // Standard moods
   'happy': MOODS.HAPPY,
   'happiness': MOODS.HAPPY,
   'joyful': MOODS.HAPPY,
@@ -31,30 +29,27 @@ const moodMappings = {
 };
 
 /**
- * Normalizes mood string to standard capitalized format
- * @param {string} mood - The mood to normalize
- * @returns {string} - Normalized mood string
+ * @param {string} mood
+ * @returns {string}
  */
 const normalizeMood = (mood) => {
   if (!mood) return 'Unknown';
   
   const normalizedInput = mood.toLowerCase().trim();
-  return moodMappings[normalizedInput] || MOODS.HAPPY; // Default to Happy if unknown
+  return moodMappings[normalizedInput] || MOODS.HAPPY;
 };
 
 /**
- * Normalizes an array of moods
- * @param {string[]} moods - Array of moods to normalize
- * @returns {string[]} - Array of normalized moods
+ * @param {string[]} moods 
+ * @returns {string[]} 
  */
 const normalizeMoods = (moods) => {
   return moods.map(mood => normalizeMood(mood));
 };
 
 /**
- * Checks if a mood is valid
- * @param {string} mood - The mood to validate
- * @returns {boolean} - Whether the mood is valid
+ * @param {string} mood 
+ * @returns {boolean} 
  */
 const isValidMood = (mood) => {
   return Object.values(MOODS).includes(normalizeMood(mood));

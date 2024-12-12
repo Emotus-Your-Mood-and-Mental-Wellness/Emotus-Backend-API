@@ -127,10 +127,10 @@ class AnalyticsService {
 
   static analyzeTimeOfDay(entries) {
     const timeSlots = {
-      morning: 0,   // 5:00 - 11:59
-      afternoon: 0, // 12:00 - 16:59
-      evening: 0,   // 17:00 - 21:59
-      night: 0      // 22:00 - 4:59
+      morning: 0,  
+      afternoon: 0, 
+      evening: 0,  
+      night: 0      
     };
 
     entries.forEach(entry => {

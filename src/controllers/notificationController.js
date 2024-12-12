@@ -3,7 +3,7 @@ const NotificationService = require('../services/notificationService');
 class NotificationController {
   static async updateSettings(req, res) {
     try {
-      const userId = req.user.uid; // Get userId from authenticated token
+      const userId = req.user.uid;
       const settings = req.body;
 
       await NotificationService.updateNotificationSettings(userId, settings);

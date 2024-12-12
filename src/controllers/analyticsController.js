@@ -5,7 +5,7 @@ class AnalyticsController {
   static async getMoodTrends(req, res) {
     try {
       const { startDate, endDate, period = 'daily' } = req.query;
-      const userId = req.user.uid; // Get userId from authenticated token
+      const userId = req.user.uid;
 
       const trends = await AnalyticsService.getMoodTrends(
         userId,
@@ -24,7 +24,7 @@ class AnalyticsController {
   static async getDailySummary(req, res) {
     try {
       const { period, startDate, endDate } = req.query;
-      const userId = req.user.uid; // Get userId from authenticated token
+      const userId = req.user.uid;
 
       const summary = await SummaryService.generateDailySummary(
         userId,

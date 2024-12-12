@@ -18,7 +18,7 @@ class AuthController {
 
       const userRef = db.collection('users').doc(userRecord.uid);
       const accountRef = userRef.collection('account').doc('info');
-      const moodRef = userRef.collection('moods'); // Initialize moods collection
+      const moodRef = userRef.collection('moods'); 
 
       const accountData = {
         username,
