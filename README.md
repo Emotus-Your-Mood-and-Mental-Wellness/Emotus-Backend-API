@@ -14,93 +14,115 @@ https://emotus-backend-api-1089286517825.asia-southeast2.run.app/api
 ```
 
 ## Authentication
-All endpoints require a user ID for request authentication and data isolation. The user ID must be included as a query parameter:
+The API uses Firebase Authentication. All protected endpoints require a valid Firebase ID token in the Authorization header:
+```http
+Authorization: Bearer <firebase_id_token>
 ```
-?userId=your_user_id
-```
-
-Example: `https://emotus-backend-api-1089286517825.asia-southeast2.run.app/api/moods?userId=user123`
 
 ## Endpoints
 
 ### Account Management
 
-#### Register Account
+#### Register
 ```http
-POST /account/register
+POST /api/auth/register
 ```
 
-Creates a new user account.
+Creates a new user account with Firebase Authentication.
 
 Request Body:
 ```json
 {
-  "username": "emotus",
-  "password": "emotus2024",
-  "email": "emotus@gmail.com" // Optional
+  "email": "emotus@gmail.com",
+  "password": "emotus123",
+  "username": "Emotus"
 }
 ```
 
 Response:
 ```json
 {
-  "message": "Account created successfully",
-  "userId": "user123"
+  "message": "User registered successfully",
+  "userId": "firebase_user_id",
+  "email": "user@example.com",
+  "username": "username",
+  "accountInfo": {
+    "username": "username",
+    "email": "user@example.com",
+    "createdAt": "2024-03-14T08:30:45.000Z",
+    "lastLogin": "2024-03-14T08:30:45.000Z",
+    "role": "user",
+    "profilePhotoUrl": null
+  }
 }
 ```
 
 #### Login
 ```http
-POST /account/login
+POST /api/auth/login
 ```
 
-Login to the account.
+Authenticates a user using Firebase ID token.
 
 Request Body:
 ```json
 {
-  "userId": "user123",
-  "password": "emotus2024"
+  "idToken": "firebase_id_token"
 }
 ```
 
 Response:
 ```json
 {
-  "userId": "user123",
-  "message": "login successful"
+  "message": "Login successful",
+  "user": {
+    "userId": "firebase_user_id",
+    "email": "user@example.com",
+    "username": "username",
+    "role": "user",
+    "profilePhotoUrl": "https://storage.url/photo.jpg"
+  }
 }
 ```
 
 #### Get Account Information
 ```http
-GET /account?userId={userId}
+GET /api/auth/profile
 ```
 
-Updates user account information.
+Retrieves the authenticated user's profile information.
 
 Response:
 ```json
 {
-  "username": "emotus",
-  "email": "emotus@gmail.com",
-  "createdAt": "2024-12-07T12:10:01.736Z",
-  "profilePhotoUrl": "https://storage.googleapis.com/emotus-project.firebasestorage.app/profile-photos/user17/bfc44846-b066-4078-90b5-8c1a9ffffcf5.png",
-  "updatedAt": "2024-12-07T12:10:46.376Z"
+  "username": "username",
+  "email": "user@example.com",
+  "createdAt": "2024-03-14T08:30:45.000Z",
+  "lastLogin": "2024-03-14T08:30:45.000Z",
+  "role": "user",
+  "profilePhotoUrl": "https://storage.url/photo.jpg"
 }
 ```
 
 #### Update Account Information
 ```http
-PUT /account?userId={userId}
+PUT /api/auth/profile
 ```
-Updates user account information.
+
+Updates the authenticated user's profile information.
 
 Request Body:
 ```json
 {
-  "username": "emotus mood",
-  "email": "emotus@gmail.com"
+  "username": "new_username",
+  "email": "new_email@example.com"
+}
+```
+
+Response:
+```json
+{
+  "message": "Profile updated successfully"
 }
 ```
 
@@ -108,13 +130,15 @@ Request Body:
 
 #### Create Mood Entry
 ```http
-POST /moods?userId={userId}
+POST /api/moods
 ```
+
+Creates a new mood entry with ML-based mood prediction.
 
 Request Body:
 ```json
 {
-  "diaryEntry": "Today was a great day! I accomplished all my tasks."
+  "diaryEntry": "Hari ini aku sangat senang karena mendapatkan hadiah dari keluarga aku"
 }
 ```
 
@@ -127,21 +151,16 @@ Optional fields:
 Response:
 ```json
 {
-  "id": "mood_entry_id",
-  "diaryEntry": "Hari ini aku sangat senang karena diberikan hadiah dari orang tua",
+  "id": "entry_id",
+  "diaryEntry": "Hari ini aku sangat senang karena mendapatkan hadiah dari keluarga aku",
   "mood": "Happy",
   "predictedMood": "Happy",
-  "stressLevel": "Low",
+  "stressLevel": Low,
   "sympathyMessage": "Sungguh luar biasa! Kamu bisa menjaga mood yang positif.",
   "thoughtfulSuggestions": [
     "Coba ambil waktu untuk refleksi dan bersyukur",
     "Bagikan cerita positifmu dengan orang terdekat",
     "Rencanakan aktivitas menyenangkan untuk besok"
-  ],
-  "thingsToDo": [
-    "Bagikan senyuman dan kata-kata positif ke orang di sekitarmu",
-    "Tulis 3 hal yang membuatmu bersyukur hari ini",
-    "Rencanakan aktivitas seru untuk akhir pekan"
   ],
   "createdAt": "2024-03-14T08:30:45.000Z",
   "updatedAt": "2024-03-14T08:30:45.000Z"
@@ -150,7 +169,7 @@ Response:
 
 #### Get Mood Entries
 ```http
-GET /moods?userId={userId}&period={period}&startDate={startDate}&endDate={endDate}
+GET /api/moods?startDate={startDate}&endDate={endDate}&period={period}
 ```
 
 Retrieves mood entries within a specified time range.
@@ -182,30 +201,48 @@ Response:
 
 #### Update Mood Entry
 ```http
-PUT /moods/{entryId}?userId={userId}
+PUT /api/moods/{entryId}
 ```
 
-Update mood entries
+Updates an existing mood entry.
 
-Request Body:
+Response:
 ```json
 {
-  "diaryEntry": "Updated entry content"
+  "id": "entry_id",
+  "diaryEntry": "Updated diary entry content",
+  "mood": "Happy",
+  "predictedMood": "Happy",
+  "stressLevel": Low,
+  "sympathyMessage": "Updated sympathy message",
+  "thoughtfulSuggestions": [
+    "Updated suggestion 1",
+    "Updated suggestion 2",
+    "Updated suggestion 3"
+  ],
+  "updatedAt": "2024-03-14T09:30:45.000Z"
 }
 ```
 
 #### Delete Mood Entry
 ```http
-DELETE /moods/{entryId}?userId={userId}
+DELETE /api/moods/{entryId}
 ```
 
-Delete mood entries
+Deletes a specific mood entry.
+
+Response:
+```json
+{
+  "message": "Mood entry deleted successfully"
+}
+```
 
 ### Analytics
 
 #### Get Mood Trends
 ```http
-GET /analytics/trends?userId={userId}&period={period}&startDate={startDate}&endDate={endDate}
+GET /api/analytics/trends?period={period}&startDate={startDate}&endDate={endDate}
 ```
 
 Provides comprehensive mood analysis and trends.
@@ -221,26 +258,28 @@ Response:
   "period": "monthly",
   "startDate": "2024-03-01T00:00:00.000Z",
   "endDate": "2024-03-31T23:59:59.999Z",
+  "totalEntries": 30,
   "moodDistribution": {
-    "Happy": { "count": 15, "percentage": 50 },
-    "Sadness": { "count": 6, "percentage": 20 },
-    "Love": { "count": 9, "percentage": 30 }
+    "Happy": {
+      "count": 15,
+      "percentage": 50
+    },
+    "Sadness": {
+      "count": 6,
+      "percentage": 20
+    }
   },
   "stressLevelTrend": [
     {
       "date": "2024-03-14T08:30:45.000Z",
-      "stressLevel": 2,
+      "stressLevel": 3,
       "mood": "Happy"
     }
   ],
   "commonTriggers": [
     {
-      "trigger": "work",
+      "trigger": "makanan",
       "frequency": 8
-    },
-    {
-      "trigger": "family",
-      "frequency": 5
     }
   ],
   "timeOfDayAnalysis": {
@@ -254,10 +293,10 @@ Response:
 
 #### Get Daily/Weekly/Monthly Summary
 ```http
-GET /analytics/summary?userId={userId}&period={period}
+GET /api/analytics/summary?period={period}
 ```
 
-Provides a comprehensive summary of mood patterns and personalized insights.
+Retrieves a comprehensive summary of mood patterns for the specified period.
 
 Query Parameters:
 - `period`: daily, weekly, monthly (optional, defaults to daily)
@@ -270,15 +309,23 @@ Response:
   "totalEntries": 3,
   "dominantMood": "Happy",
   "dominantStressLevel": "Low",
+  "entries": [
+    {
+      "id": "entry_id",
+      "mood": "Happy",
+      "stressLevel": Low,
+      "createdAt": "2024-03-14T08:30:45.000Z"
+    }
+  ],
   "sympathyMessage": "Sungguh luar biasa! Kamu bisa menjaga mood yang positif.",
   "thoughtfulSuggestions": [
     "Coba ambil waktu untuk refleksi dan bersyukur",
     "Bagikan cerita positifmu dengan orang terdekat",
     "Rencanakan aktivitas menyenangkan untuk besok"
   ],
-  "helpfulHint": "Saat kamu bahagia, bagikan energi positifmu dengan orang lain.",
-  "feelInspire": "Kebahagiaanmu adalah cerminan dari usaha dan cara kamu melihat dunia.",
-  "summary": "Anda mencatat 3 entri suasana hati selama periode ini. Suasana hati Anda yang dominan adalah Happy dengan tingkat stres yang didominasi Low. Pertimbangkan untuk meninjau kembali saran-saran bijaksana yang diberikan untuk mempertahankan atau meningkatkan kesejahteraan emosional Anda."
+  "helpfulHint": "Bagikan energi positifmu hari ini!",
+  "feelInspire": "Kebahagiaanmu adalah cerminan dari usaha dan rasa syukurmu.",
+  "summary": "Anda mencatat 3 entri suasana hati selama periode ini. Suasana hati Anda yang dominan adalah Happy dengan tingkat stres yang didominasi Low."
 }
 ```
 
@@ -286,7 +333,7 @@ Response:
 
 #### Get Daily Tip
 ```http
-GET /daily-tips?userId={userId}
+GET /api/daily-tips
 ```
 
 Provides personalized daily tips based on mood patterns.
@@ -308,12 +355,16 @@ Response:
 
 #### Upload Profile Photo
 ```http
-POST /users/photo?userId={userId}
+POST /api/users/photo
 ```
+
 Uploads a user profile photo.
 
-Form Data:
-- `photo`: Image file (max 5MB, image formats only)
+Request:
+- Content-Type: multipart/form-data
+- Field name: photo
+- Max size: 5MB
+- Supported formats: image/jpeg, image/png
 
 Response:
 ```json
@@ -324,10 +375,10 @@ Response:
 
 #### Delete Profile Photo
 ```http
-DELETE /users/photo?userId={userId}
+DELETE /api/users/photo
 ```
 
-Delete user profile photo.
+Deletes the user's current profile photo.
 
 Response:
 ```json
@@ -340,8 +391,9 @@ Response:
 
 #### Update Notification Settings
 ```http
-PUT /notifications/settings?userId={userId}
+PUT /api/notifications/settings
 ```
+
 Configures user notification preferences.
 
 Request Body:
@@ -351,6 +403,13 @@ Request Body:
   "weeklySummary": true,
   "dailyReminders": true,
   "reminderTimes": ["09:00", "15:00", "21:00"]
+}
+```
+
+Response:
+```json
+{
+  "message": "Notification settings updated successfully"
 }
 ```
 
@@ -405,17 +464,22 @@ To ensure API stability and fair usage:
 
 ## Security Features
 
-1. Input Validation
+1. Authentication
+   - Firebase Authentication
+   - JWT token validation
+   - Role-based access control
+
+2. Input Validation
    - All user inputs are sanitized and validated
    - File uploads are scanned for malware
    - Size limits enforced on all requests
 
-2. Data Protection
+3. Data Protection
    - All data is stored in secure Firebase storage
-   - User data is isolated by userId
+   - Input validation and sanitization
    - Sensitive data is encrypted at rest
 
-3. Access Control
+4. Access Control
    - Each request requires valid userId
    - Resource access is restricted to owners
    - File access uses signed URLs
