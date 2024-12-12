@@ -1,12 +1,18 @@
 const { body, query } = require('express-validator');
 const { isValidDateFormat } = require('./dateUtils');
+const { VALID_MOODS } = require('../constants/moods');
 
 const createMoodSchema = [
   body('diaryEntry').notEmpty().trim().escape()
     .withMessage('Diary entry is required'),
   body('mood').optional()
-    .isIn(['Happy', 'Sad', 'Angry', 'Fearful', 'Love'])
-    .withMessage('Invalid mood type'),
+    .custom(value => {
+      if (!value) return true;
+      if (!VALID_MOODS.includes(value)) {
+        throw new Error(`Invalid mood type. Must be one of: ${VALID_MOODS.join(', ')}`);
+      }
+      return true;
+    }),
   body('stressLevel').optional()
     .isIn(['Low', 'Medium', 'High'])
     .withMessage('Stress level must be Low, Medium, or High')
@@ -15,7 +21,13 @@ const createMoodSchema = [
 const updateMoodSchema = [
   body('diaryEntry').optional().trim().escape(),
   body('mood').optional()
-    .isIn(['Happy', 'Sad', 'Angry', 'Fearful', 'Love']),
+    .custom(value => {
+      if (!value) return true;
+      if (!VALID_MOODS.includes(value)) {
+        throw new Error(`Invalid mood type. Must be one of: ${VALID_MOODS.join(', ')}`);
+      }
+      return true;
+    }),
   body('stressLevel').optional()
     .isIn(['Low', 'Medium', 'High'])
 ];
@@ -72,8 +84,6 @@ const accountSchema = [
     .withMessage('Profile photo URL must be a valid URL')
 ];
 
-const dailyTipsSchema = [];
-
 module.exports = {
   createMoodSchema,
   updateMoodSchema,
@@ -81,6 +91,5 @@ module.exports = {
   getAnalyticsSchema,
   notificationSettingsSchema,
   photoUploadSchema,
-  accountSchema,
-  dailyTipsSchema
+  accountSchema
 };

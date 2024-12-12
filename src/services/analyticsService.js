@@ -1,5 +1,7 @@
 const { db } = require('../config/firebase');
-const { formatDate, parseDate, getDateRange } = require('../utils/dateUtils');
+const { formatDate, getDateRange } = require('../utils/dateUtils');
+const { normalizeMood } = require('../utils/moodNormalizer');
+const { VALID_MOODS } = require('../constants/moods');
 
 class AnalyticsService {
   static async getMoodTrends(userId, startDate, endDate, period = 'daily') {
@@ -19,7 +21,8 @@ class AnalyticsService {
       const snapshot = await query.get();
       const entries = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        mood: normalizeMood(doc.data().mood || doc.data().predictedMood)
       }));
 
       if (entries.length === 0) {
@@ -28,7 +31,7 @@ class AnalyticsService {
           period,
           startDate: formatDate(start),
           endDate: formatDate(end),
-          moodDistribution: {},
+          moodDistribution: this.getEmptyMoodDistribution(),
           stressLevelTrend: [],
           commonTriggers: [],
           timeOfDayAnalysis: {
@@ -61,22 +64,34 @@ class AnalyticsService {
     }
   }
 
-  static calculateMoodDistribution(entries) {
+  static getEmptyMoodDistribution() {
     const distribution = {};
+    
+    VALID_MOODS.forEach(mood => {
+      distribution[mood] = {
+        count: 0,
+        percentage: 0
+      };
+    });
+
+    return distribution;
+  }
+
+  static calculateMoodDistribution(entries) {
+    const distribution = this.getEmptyMoodDistribution();
     const total = entries.length;
 
     entries.forEach(entry => {
-      const mood = entry.mood || entry.predictedMood;
-      if (mood) {
-        distribution[mood] = (distribution[mood] || 0) + 1;
+      const mood = normalizeMood(entry.mood || entry.predictedMood);
+      if (mood && distribution[mood]) {
+        distribution[mood].count += 1;
       }
     });
 
     Object.keys(distribution).forEach(mood => {
-      distribution[mood] = {
-        count: distribution[mood],
-        percentage: Math.round((distribution[mood] / total) * 100)
-      };
+      distribution[mood].percentage = total > 0 
+        ? Math.round((distribution[mood].count / total) * 100)
+        : 0;
     });
 
     return distribution;
@@ -86,7 +101,7 @@ class AnalyticsService {
     return entries.map(entry => ({
       date: entry.createdAt,
       stressLevel: entry.stressLevel || 0,
-      mood: entry.mood || entry.predictedMood || 'Unknown'
+      mood: normalizeMood(entry.mood || entry.predictedMood)
     }));
   }
 
@@ -112,10 +127,10 @@ class AnalyticsService {
 
   static analyzeTimeOfDay(entries) {
     const timeSlots = {
-      morning: 0,   
-      afternoon: 0, 
-      evening: 0,   
-      night: 0      
+      morning: 0,   // 5:00 - 11:59
+      afternoon: 0, // 12:00 - 16:59
+      evening: 0,   // 17:00 - 21:59
+      night: 0      // 22:00 - 4:59
     };
 
     entries.forEach(entry => {

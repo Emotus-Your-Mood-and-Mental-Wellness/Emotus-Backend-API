@@ -1,24 +1,27 @@
+const { VALID_MOODS } = require('../constants/moods');
+const { normalizeAndCapitalizeMood } = require('./moodAnalyzer');
+
 const isValidMood = (mood) => {
-    const validMoods = ['Happy', 'Sad', 'Angry', 'Fearful', 'Love'];
-    return !mood || validMoods.includes(mood);
+  return !mood || VALID_MOODS.includes(normalizeAndCapitalizeMood(mood));
+};
+
+const isValidStressLevel = (level) => {
+  if (!level) return true;
+  const numLevel = Number(level);
+  return !isNaN(numLevel) && numLevel >= 1 && numLevel <= 10;
+};
+
+const sanitizeEntry = (entry) => {
+  return {
+    ...entry,
+    diaryEntry: entry.diaryEntry?.trim(),
+    mood: entry.mood ? normalizeAndCapitalizeMood(entry.mood) : undefined,
+    stressLevel: entry.stressLevel ? Number(entry.stressLevel) : undefined
   };
-  
-  const isValidStressLevel = (level) => {
-    if (!level) return true;
-    const numLevel = Number(level);
-    return !isNaN(numLevel) && numLevel >= 1 && numLevel <= 10;
-  };
-  
-  const sanitizeEntry = (entry) => {
-    return {
-      ...entry,
-      diaryEntry: entry.diaryEntry?.trim(),
-      stressLevel: entry.stressLevel ? Number(entry.stressLevel) : undefined
-    };
-  };
-  
-  module.exports = {
-    isValidMood,
-    isValidStressLevel,
-    sanitizeEntry
-  };
+};
+
+module.exports = {
+  isValidMood,
+  isValidStressLevel,
+  sanitizeEntry
+};

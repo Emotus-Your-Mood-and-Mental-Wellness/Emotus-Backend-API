@@ -6,7 +6,7 @@ const happyTips = {
     ],
     kindReminder: [
       "Kebahagiaan adalah pilihan, dan hari ini kamu sudah memilih untuk bahagia. Terus jaga energi positif ini!",
-      "Your happiness is contagious! Keep spreading that positive energy and let it inspire others around you.",
+      "Kebahagiaan Anda menular! Teruslah menyebarkan energi positif itu dan biarkan energi itu menginspirasi orang lain di sekitar Anda.",
       "Mood baikmu hari ini adalah bukti bahwa kamu sudah melakukan yang terbaik. Pertahankan semangat ini!"
     ],
     quickActivity: [

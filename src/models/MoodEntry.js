@@ -3,6 +3,7 @@ const FirebaseUtils = require('../utils/firebaseUtils');
 const { formatDate } = require('../utils/dateUtils');
 const { sanitizeEntry } = require('../utils/validationUtils');
 const MLService = require('../services/mlService');
+const { normalizeMood } = require('../utils/moodNormalizer');
 
 class MoodEntry {
   static async create(entryData, uid) {
@@ -15,11 +16,12 @@ class MoodEntry {
       const moodRef = userRef.collection('moods');
       const sanitizedData = sanitizeEntry(entryData);
       
+      // Get ML prediction if there's diary entry
       let predictionData = {};
       if (sanitizedData.diaryEntry) {
         const prediction = await MLService.predictMood(sanitizedData.diaryEntry);
         predictionData = {
-          predictedMood: prediction.predicted_mood,
+          predictedMood: normalizeMood(prediction.predicted_mood),
           stressLevel: prediction.stress_level || 0,
           sympathyMessage: prediction.sympathy_message,
           thoughtfulSuggestions: prediction.thoughtful_suggestions || [],
@@ -34,7 +36,7 @@ class MoodEntry {
         ...sanitizedData,
         ...predictionData,
         userId: uid,
-        mood: sanitizedData.mood || predictionData.predictedMood || 'Unknown',
+        mood: normalizeMood(sanitizedData.mood || predictionData.predictedMood || 'Unknown'),
         createdAt: timestamp,
         updatedAt: timestamp
       };
@@ -66,7 +68,8 @@ class MoodEntry {
       const snapshot = await query.get();
       const entries = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        mood: normalizeMood(doc.data().mood || doc.data().predictedMood)
       }));
 
       return {

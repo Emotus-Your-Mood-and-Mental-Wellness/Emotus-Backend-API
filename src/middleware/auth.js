@@ -10,6 +10,7 @@ const authenticateUser = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
     const decodedToken = await admin.auth().verifyIdToken(token);
     
+    // Add user info to request object
     req.user = {
       uid: decodedToken.uid,
       email: decodedToken.email,
@@ -20,10 +21,14 @@ const authenticateUser = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Authentication error:', error);
+    if (error.code === 'auth/id-token-expired') {
+      return res.status(401).json({ error: 'Token expired' });
+    }
     res.status(401).json({ error: 'Unauthorized - Invalid token' });
   }
 };
 
+// Middleware to check if user has admin role
 const requireAdmin = (req, res, next) => {
   if (req.user && req.user.role === 'admin') {
     next();
