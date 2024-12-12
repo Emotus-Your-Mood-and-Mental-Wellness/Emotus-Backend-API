@@ -1,7 +1,8 @@
 # Emotus Cloud Computing Documentation
 
 ## Cloud Architecture
-<img width="2706" alt="Untitled (7)" src="https://github.com/user-attachments/assets/980186ed-a46f-4c91-8f40-eb9e2e817fa6">
+<img width="2706" alt="Untitled (9)" src="https://github.com/user-attachments/assets/c71076ad-6aeb-4c51-856a-00efb1628b6a" />
+
 
 # Emotus Backend API Documentation
 
