@@ -597,27 +597,27 @@ curl "https://emotus-backend-api-1089286517825.asia-southeast2.run.app/api/analy
 
 # Cloud Computing Tools
 ![Untitled design (20)](https://github.com/user-attachments/assets/21407885-508f-491f-a0a6-7162241754e1)
-### Visual Studio Code
+### 1.Visual Studio Code
 <p align="justify">
 Visual Studio Code serves as our primary IDE for writing and debugging backend code. Its lightweight and powerful features streamlined our development process.
 </p>
 
-### Node.js / ExpressJS
+### 2.Node.js / ExpressJS
 <p align="justify">
 Node.js with ExpressJS powers our backend API. It helps manage routes, handle HTTP requests, and integrates seamlessly with other components of the app.
 </p>
 
-### Google Cloud Platform
+### 3.Google Cloud Platform
 <p align="justify">
 Google Cloud provides the infrastructure for our app. We use Cloud Run to deploy the backend API and Cloud Firestore for secure and scalable data storage, enabling the app to handle growing user demands efficiently.
 </p>
 
-### Firebase
+### 4.Firebase
 <p align="justify">
 We are using Firebase for real-time data synchronization, ensuring that user data, mood entries, and other app-related information are always up-to-date across devices.
 </p>
 
-### Postman
+### 5.Postman
 <p align="justify">
 Postman is used to test and debug our APIs, ensuring that data flow and responses work as expected before deployment.
 </p>
