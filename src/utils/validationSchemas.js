@@ -32,7 +32,6 @@ const getAnalyticsSchema = [
     .withMessage('Start date must be in YYYY-MM-DD format'),
   query('endDate').optional().custom(isValidDateFormat)
     .withMessage('End date must be in YYYY-MM-DD format'),
-  query('userId').notEmpty().withMessage('userId is required'),
   query('period').optional().isIn(['daily', 'weekly', 'monthly'])
     .withMessage('Period must be daily, weekly, or monthly')
 ];
@@ -42,12 +41,10 @@ const notificationSettingsSchema = [
   body('weeklySummary').optional().isBoolean(),
   body('dailyReminders').optional().isBoolean(),
   body('reminderTimes').optional().isArray(),
-  body('reminderTimes.*').optional().matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
-  query('userId').notEmpty().withMessage('userId is required')
+  body('reminderTimes.*').optional().matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
 ];
 
 const photoUploadSchema = [
-  query('userId').notEmpty().withMessage('userId is required'),
   body('photo').custom((value, { req }) => {
     if (!req.file) {
       throw new Error('Profile photo is required');
@@ -75,9 +72,7 @@ const accountSchema = [
     .withMessage('Profile photo URL must be a valid URL')
 ];
 
-const dailyTipsSchema = [
-  query('userId').notEmpty().withMessage('userId is required')
-];
+const dailyTipsSchema = [];
 
 module.exports = {
   createMoodSchema,

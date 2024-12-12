@@ -4,109 +4,118 @@ const { formatDate, parseDate, getDateRange } = require('../utils/dateUtils');
 class AnalyticsService {
   static async getMoodTrends(userId, startDate, endDate, period = 'daily') {
     try {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+
       const { startDate: start, endDate: end } = getDateRange(startDate, endDate, period);
       
       const moodRef = db.collection('users').doc(userId).collection('moods');
-      let query = moodRef
+      const query = moodRef
         .where('createdAt', '>=', formatDate(start))
         .where('createdAt', '<=', formatDate(end))
-        .orderBy('createdAt');
+        .orderBy('createdAt', 'desc');
 
       const snapshot = await query.get();
       const entries = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
+        id: doc.id,
+        ...doc.data()
       }));
+
+      if (entries.length === 0) {
+        return {
+          message: "No mood entries found for the specified period.",
+          period,
+          startDate: formatDate(start),
+          endDate: formatDate(end),
+          moodDistribution: {},
+          stressLevelTrend: [],
+          commonTriggers: [],
+          timeOfDayAnalysis: {
+            morning: 0,
+            afternoon: 0,
+            evening: 0,
+            night: 0
+          }
+        };
+      }
+
+      const moodDistribution = this.calculateMoodDistribution(entries);
+      const stressLevelTrend = this.calculateStressLevelTrend(entries);
+      const commonTriggers = this.analyzeCommonTriggers(entries);
+      const timeOfDayAnalysis = this.analyzeTimeOfDay(entries);
 
       return {
         period,
         startDate: formatDate(start),
         endDate: formatDate(end),
-        moodDistribution: this.calculateMoodDistribution(entries),
-        stressLevelTrend: this.calculateStressLevelTrend(entries),
-        commonTriggers: this.analyzeCommonTriggers(entries),
-        timeOfDayAnalysis: this.analyzeTimeOfDay(entries)
+        totalEntries: entries.length,
+        moodDistribution,
+        stressLevelTrend,
+        commonTriggers,
+        timeOfDayAnalysis
       };
     } catch (error) {
-      console.error('Analytics error:', error);
-      throw new Error('Failed to generate mood analytics');
+      console.error('Get mood trends error:', error);
+      throw new Error('Failed to get mood trends: ' + error.message);
     }
   }
 
   static calculateMoodDistribution(entries) {
-    const distribution = {
-      Happy: { count: 0, percentage: 0 },
-      Sadness: { count: 0, percentage: 0 },
-      Anger: { count: 0, percentage: 0 },
-      Fear: { count: 0, percentage: 0 },
-      Love: { count: 0, percentage: 0 }
-    };
+    const distribution = {};
+    const total = entries.length;
 
     entries.forEach(entry => {
       const mood = entry.mood || entry.predictedMood;
       if (mood) {
-        const standardizedMood = this.standardizeMood(mood);
-        if (distribution[standardizedMood]) {
-          distribution[standardizedMood].count++;
-        }
+        distribution[mood] = (distribution[mood] || 0) + 1;
       }
     });
 
-    const total = entries.length;
-    if (total > 0) {
-      Object.keys(distribution).forEach(mood => {
-        distribution[mood].percentage = Math.round((distribution[mood].count / total) * 100);
-      });
-    }
+    Object.keys(distribution).forEach(mood => {
+      distribution[mood] = {
+        count: distribution[mood],
+        percentage: Math.round((distribution[mood] / total) * 100)
+      };
+    });
 
     return distribution;
-  }
-
-  static standardizeMood(mood) {
-    const moodMap = {
-      'happy': 'Happy',
-      'sad': 'Sadness',
-      'sadness': 'Sadness',
-      'anger': 'Anger',
-      'angry': 'Anger',
-      'fear': 'Fear',
-      'fearful': 'Fear',
-      'love': 'Love'
-    };
-    
-    return moodMap[mood.toLowerCase()] || mood;
   }
 
   static calculateStressLevelTrend(entries) {
     return entries.map(entry => ({
       date: entry.createdAt,
       stressLevel: entry.stressLevel || 0,
-      mood: (entry.mood || entry.predictedMood || 'Unknown')
+      mood: entry.mood || entry.predictedMood || 'Unknown'
     }));
   }
 
   static analyzeCommonTriggers(entries) {
-    const significantEntries = entries.filter(entry => {
-      const mood = (entry.mood || entry.predictedMood || '').toLowerCase();
-      const isNegativeMood = ['sadness', 'anger', 'fear'].includes(mood);
-      const isHighStress = entry.stressLevel > 7;
-      return isNegativeMood || isHighStress;
-    });
-
-    const keywords = significantEntries
+    const keywords = entries
       .filter(entry => entry.diaryEntry)
       .map(entry => this.extractKeywords(entry.diaryEntry))
       .flat();
 
-    return this.aggregateCommonWords(keywords);
+    const frequency = {};
+    keywords.forEach(word => {
+      frequency[word] = (frequency[word] || 0) + 1;
+    });
+
+    return Object.entries(frequency)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([trigger, count]) => ({
+        trigger,
+        frequency: count
+      }));
   }
 
   static analyzeTimeOfDay(entries) {
     const timeSlots = {
-      morning: 0,   // 5:00 - 11:59
-      afternoon: 0, // 12:00 - 16:59
-      evening: 0,   // 17:00 - 21:59
-      night: 0      // 22:00 - 4:59
+      morning: 0,   
+      afternoon: 0, 
+      evening: 0,   
+      night: 0      
     };
 
     entries.forEach(entry => {
@@ -125,7 +134,9 @@ class AnalyticsService {
   static extractKeywords(text) {
     if (!text) return [];
     
-    const words = text.toLowerCase().split(/\W+/);
+    const words = text.toLowerCase()
+      .replace(/[^\w\s]/g, '')
+      .split(/\s+/);
     
     const commonWords = new Set([
       'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'a', 'an', 'is', 'are',
@@ -133,33 +144,14 @@ class AnalyticsService {
       'this', 'that', 'these', 'those', 'they', 'them', 'their', 'what', 'which',
       'who', 'whom', 'whose', 'when', 'where', 'why', 'how', 'all', 'any', 'both',
       'each', 'few', 'more', 'most', 'other', 'some', 'such', 'than', 'too',
-      'very', 'can', 'cannot', 'just', 'now', 'also', 'then', 'aku', 'saya', 'dia',
-      'kamu'
+      'very', 'can', 'cannot', 'just', 'now', 'also', 'then'
     ]);
 
     return words.filter(word => 
       word.length > 3 && 
       !commonWords.has(word) && 
-      isNaN(word) &&
-      word.trim().length > 0
+      isNaN(word)
     );
-  }
-
-  static aggregateCommonWords(words) {
-    if (!words.length) return [];
-
-    const frequency = words.reduce((acc, word) => {
-      acc[word] = (acc[word] || 0) + 1;
-      return acc;
-    }, {});
-
-    return Object.entries(frequency)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-      .map(([word, count]) => ({
-        trigger: word,
-        frequency: count
-      }));
   }
 }
 

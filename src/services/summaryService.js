@@ -21,7 +21,6 @@ class SummaryService {
         ...doc.data()
       }));
 
-      // If no entries found, return a simplified response
       if (entries.length === 0) {
         const periodText = this.getPeriodText(period);
         return {
@@ -44,7 +43,6 @@ class SummaryService {
         .sort(([, a], [, b]) => b - a)
         .map(([mood]) => mood)[0];
 
-      // Count occurrences of each stress level
       const stressLevelCounts = entries.reduce((acc, entry) => {
         const stressLevel = entry.stressLevel;
         if (stressLevel !== undefined && stressLevel !== null) {
@@ -54,12 +52,10 @@ class SummaryService {
         return acc;
       }, {});
 
-      // Determine dominant stress level based on frequency
       const dominantStressLevel = Object.entries(stressLevelCounts)
         .sort(([, a], [, b]) => b - a)
         .map(([level]) => level)[0] || 'Low';
 
-      // Get personalized messages based on mood history
       const messages = await MoodMessageService.getPersonalizedMessages(
         userId,
         dominantMood,
@@ -67,10 +63,8 @@ class SummaryService {
         db
       );
 
-      // Get a random helpful hint based on the dominant mood
       const helpfulHint = getRandomHint(dominantMood);
 
-      // Get a random feel inspire message based on the dominant mood
       const feelInspire = getRandomFeelInspire(dominantMood);
 
       return {

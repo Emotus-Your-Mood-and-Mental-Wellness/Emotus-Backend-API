@@ -4,8 +4,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const NotificationService = require('./services/notificationService');
+const { authenticateUser } = require('./middleware/auth');
 
-// Import routes
+const authRoutes = require('./routes/authRoutes');
 const moodRoutes = require('./routes/moodRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
@@ -15,29 +16,26 @@ const dailyTipsRoutes = require('./routes/dailyTipsRoutes');
 
 const app = express();
 
-// Middleware
-app.use(helmet()); // Security headers
-app.use(cors()); // Enable CORS
-app.use(morgan('dev')); // Logging
-app.use(express.json()); // Parse JSON bodies
+app.use(helmet()); 
+app.use(cors()); 
+app.use(morgan('dev')); 
+app.use(express.json()); 
 
-// Routes
-app.use('/api/moods', moodRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/account', accountRoutes);
-app.use('/api/daily-tips', dailyTipsRoutes);
+app.use('/api/auth', authRoutes);
 
-// Health check endpoint
+app.use('/api/moods', authenticateUser, moodRoutes);
+app.use('/api/analytics', authenticateUser, analyticsRoutes);
+app.use('/api/notifications', authenticateUser, notificationRoutes);
+app.use('/api/users', authenticateUser, userRoutes);
+app.use('/api/account', authenticateUser, accountRoutes);
+app.use('/api/daily-tips', authenticateUser, dailyTipsRoutes);
+
 app.get('/health', (req, res) => {
   res.json({ status: 'OK' });
 });
 
-// Initialize notification scheduler
 NotificationService.scheduleReminders();
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });

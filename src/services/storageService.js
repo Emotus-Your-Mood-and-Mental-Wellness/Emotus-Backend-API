@@ -12,7 +12,6 @@ const storage = new Storage({
   projectId: 'emotus-project'
 });
 
-// Use the same bucket name as configured in Firebase
 const bucket = storage.bucket('emotus-project.firebasestorage.app');
 
 class StorageService {
@@ -33,7 +32,6 @@ class StorageService {
         });
 
         stream.on('finish', async () => {
-          // Make the file publicly accessible
           await file.makePublic();
           const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
           resolve(publicUrl);
@@ -49,9 +47,8 @@ class StorageService {
 
   static async deleteProfilePhoto(photoUrl) {
     try {
-      // Extract the full path from the URL
       const urlPath = new URL(photoUrl).pathname;
-      const fileName = urlPath.split('/').slice(2).join('/'); // Remove the first two segments (empty and bucket name)
+      const fileName = urlPath.split('/').slice(2).join('/'); 
       const file = bucket.file(fileName);
       await file.delete();
     } catch (error) {

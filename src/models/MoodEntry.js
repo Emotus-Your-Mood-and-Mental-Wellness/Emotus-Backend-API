@@ -5,44 +5,36 @@ const { sanitizeEntry } = require('../utils/validationUtils');
 const MLService = require('../services/mlService');
 
 class MoodEntry {
-  static standardizeMood(mood) {
-    const moodMap = {
-      'happy': 'Happy',
-      'sad': 'Sadness',
-      'sadness': 'Sadness',
-      'anger': 'Anger',
-      'angry': 'Anger',
-      'fear': 'Fear',
-      'fearful': 'Fear',
-      'love': 'Love'
-    };
-    
-    return moodMap[mood.toLowerCase()] || mood;
-  }
-
-  static async create(entryData, userId = 'default-user') {
+  static async create(entryData, uid) {
     try {
-      const moodRef = db.collection('users').doc(userId).collection('moods');
+      if (!uid) {
+        throw new Error('User ID is required');
+      }
+
+      const userRef = db.collection('users').doc(uid);
+      const moodRef = userRef.collection('moods');
       const sanitizedData = sanitizeEntry(entryData);
       
-      // Get ML prediction
-      const prediction = await MLService.predictMood(sanitizedData.diaryEntry);
-      
-      // Standardize mood format
-      const standardizedMood = this.standardizeMood(prediction.predicted_mood);
-      
+      let predictionData = {};
+      if (sanitizedData.diaryEntry) {
+        const prediction = await MLService.predictMood(sanitizedData.diaryEntry);
+        predictionData = {
+          predictedMood: prediction.predicted_mood,
+          stressLevel: prediction.stress_level || 0,
+          sympathyMessage: prediction.sympathy_message,
+          thoughtfulSuggestions: prediction.thoughtful_suggestions || [],
+          thingsToDo: prediction.things_to_do || []
+        };
+      }
+
       const now = new Date();
       const timestamp = now.toISOString();
 
       const newEntry = {
         ...sanitizedData,
-        userId,
-        predictedMood: standardizedMood,
-        mood: sanitizedData.mood ? this.standardizeMood(sanitizedData.mood) : standardizedMood,
-        stressLevel: prediction.stress_level,
-        sympathyMessage: prediction.sympathy_message,
-        thoughtfulSuggestions: prediction.thoughtful_suggestions,
-        thingsToDo: prediction.things_to_do,
+        ...predictionData,
+        userId: uid,
+        mood: sanitizedData.mood || predictionData.predictedMood || 'Unknown',
         createdAt: timestamp,
         updatedAt: timestamp
       };
@@ -55,21 +47,21 @@ class MoodEntry {
     }
   }
 
-  static async getAll(userId = 'default-user', startDate, endDate, period = 'daily') {
+  static async getAll(uid, startDate, endDate, period = 'daily') {
     try {
-      const filters = [];
-      if (startDate) {
-        filters.push({ field: 'createdAt', operator: '>=', value: startDate });
-      }
-      if (endDate) {
-        filters.push({ field: 'createdAt', operator: '<=', value: endDate });
+      if (!uid) {
+        throw new Error('User ID is required');
       }
 
-      const query = FirebaseUtils.createQuery(
-        `users/${userId}/moods`, 
-        filters, 
-        { field: 'createdAt', direction: 'desc' }
-      );
+      const moodRef = db.collection('users').doc(uid).collection('moods');
+      let query = moodRef.orderBy('createdAt', 'desc');
+
+      if (startDate) {
+        query = query.where('createdAt', '>=', startDate);
+      }
+      if (endDate) {
+        query = query.where('createdAt', '<=', endDate);
+      }
 
       const snapshot = await query.get();
       const entries = snapshot.docs.map(doc => ({
@@ -80,9 +72,9 @@ class MoodEntry {
       return {
         data: entries,
         total: entries.length,
-        startDate: startDate || new Date().toISOString().split('T')[0] + 'T00:00:00',
-        endDate: endDate || new Date().toISOString().split('T')[0] + 'T23:59:59',
-        period
+        period,
+        startDate: startDate || entries[entries.length - 1]?.createdAt,
+        endDate: endDate || entries[0]?.createdAt
       };
     } catch (error) {
       console.error('Get mood entries error:', error);
@@ -90,45 +82,39 @@ class MoodEntry {
     }
   }
 
-  static async update(userId = 'default-user', entryId, updateData) {
+  static async update(uid, entryId, updateData) {
     try {
-      const entryRef = db.collection('users').doc(userId).collection('moods').doc(entryId);
+      if (!uid) {
+        throw new Error('User ID is required');
+      }
+
+      const entryRef = db.collection('users').doc(uid).collection('moods').doc(entryId);
       const sanitizedData = sanitizeEntry(updateData);
       
-      // If diary entry is updated, get new ML prediction
       let predictionData = {};
       if (sanitizedData.diaryEntry) {
         const prediction = await MLService.predictMood(sanitizedData.diaryEntry);
-        const standardizedMood = this.standardizeMood(prediction.predicted_mood);
         predictionData = {
-          predictedMood: standardizedMood,
-          mood: sanitizedData.mood ? this.standardizeMood(sanitizedData.mood) : standardizedMood,
-          stressLevel: prediction.stress_level,
+          predictedMood: prediction.predicted_mood,
+          stressLevel: prediction.stress_level || 0,
           sympathyMessage: prediction.sympathy_message,
-          thoughtfulSuggestions: prediction.thoughtful_suggestions,
-          thingsToDo: prediction.things_to_do,
+          thoughtfulSuggestions: prediction.thoughtful_suggestions || [],
+          thingsToDo: prediction.things_to_do || []
         };
-      } else if (sanitizedData.mood) {
-        predictionData.mood = this.standardizeMood(sanitizedData.mood);
       }
 
       const now = new Date();
       const timestamp = now.toISOString();
       
-      await FirebaseUtils.runTransaction(async (transaction) => {
-        const doc = await transaction.get(entryRef);
-        if (!doc.exists) {
-          throw new Error('Mood entry not found');
-        }
+      const updatePayload = {
+        ...sanitizedData,
+        ...predictionData,
+        updatedAt: timestamp
+      };
 
-        transaction.update(entryRef, {
-          ...sanitizedData,
-          ...predictionData,
-          updatedAt: timestamp
-        });
-      });
-
+      await entryRef.update(updatePayload);
       const updated = await entryRef.get();
+      
       return { id: updated.id, ...updated.data() };
     } catch (error) {
       console.error('Update mood entry error:', error);
@@ -136,12 +122,14 @@ class MoodEntry {
     }
   }
 
-  static async delete(userId = 'default-user', entryId) {
+  static async delete(uid, entryId) {
     try {
-      const entryRef = db.collection('users').doc(userId).collection('moods').doc(entryId);
-      await FirebaseUtils.batchWrite([
-        { type: 'delete', ref: entryRef }
-      ]);
+      if (!uid) {
+        throw new Error('User ID is required');
+      }
+
+      const entryRef = db.collection('users').doc(uid).collection('moods').doc(entryId);
+      await entryRef.delete();
       return true;
     } catch (error) {
       console.error('Delete mood entry error:', error);

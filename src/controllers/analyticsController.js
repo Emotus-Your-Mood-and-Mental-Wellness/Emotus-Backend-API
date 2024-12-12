@@ -5,7 +5,11 @@ class AnalyticsController {
   static async getMoodTrends(req, res) {
     try {
       const { startDate, endDate, period } = req.query;
-      const userId = req.query.userId || 'default-user';
+      const userId = req.user.uid;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+      }
 
       const trends = await AnalyticsService.getMoodTrends(
         userId,
@@ -24,7 +28,11 @@ class AnalyticsController {
   static async getDailySummary(req, res) {
     try {
       const { period, startDate, endDate } = req.query;
-      const userId = req.query.userId || 'default-user';
+      const userId = req.user.uid;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+      }
 
       const summary = await SummaryService.generateDailySummary(
         userId,

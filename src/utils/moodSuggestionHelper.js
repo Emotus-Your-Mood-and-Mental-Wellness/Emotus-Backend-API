@@ -15,12 +15,10 @@ const getRandomElement = (array) => {
     let thoughtfulSuggestions = getRandomSet(messages.thoughtfulSuggestions);
     let thingsToDo = getRandomSet(messages.thingsToDo);
   
-    // Add stress-specific suggestions
     if (stressLevel === 'high') {
       const calmingActivity = "Ambil waktu sejenak untuk bernapas dalam";
       const relaxationTechnique = "Lakukan teknik relaksasi progressive muscle relaxation";
   
-      // Only add if not already present
       if (!thoughtfulSuggestions.includes(calmingActivity)) {
         thoughtfulSuggestions = [calmingActivity, ...thoughtfulSuggestions];
       }
@@ -29,7 +27,6 @@ const getRandomElement = (array) => {
       }
     }
   
-    // Remove any duplicates that might have been added
     return {
       sympathyMessage,
       thoughtfulSuggestions: removeDuplicates(thoughtfulSuggestions),

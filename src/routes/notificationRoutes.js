@@ -5,7 +5,6 @@ const { notificationSettingsSchema } = require('../utils/validationSchemas');
 
 const router = express.Router();
 
-// Update notification settings
 router.put('/settings', notificationSettingsSchema, validateRequest, NotificationController.updateSettings);
 
 module.exports = router;

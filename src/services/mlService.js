@@ -1,13 +1,11 @@
 const axios = require('axios');
 const NodeCache = require('node-cache');
 
-// Cache predictions for 1 hour
 const predictionCache = new NodeCache({ stdTTL: 3600 });
 
 class MLService {
   static async predictMood(diaryEntry) {
     try {
-      // Check cache first
       const cacheKey = `mood_${Buffer.from(diaryEntry).toString('base64')}`;
       const cachedPrediction = predictionCache.get(cacheKey);
       
@@ -22,7 +20,6 @@ class MLService {
 
       const prediction = response.data;
       
-      // Cache the prediction
       predictionCache.set(cacheKey, prediction);
       
       return prediction;

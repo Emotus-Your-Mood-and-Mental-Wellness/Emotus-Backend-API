@@ -9,15 +9,15 @@ class UserController {
         return res.status(400).json({ error: 'No file uploaded' });
       }
 
-      const userId = req.query.userId || 'default-user';
+      const uid = req.user.uid; // From auth middleware
       const fileExtension = req.file.originalname.split('.').pop();
-      const fileName = `profile-photos/${userId}/${uuidv4()}.${fileExtension}`;
+      const fileName = `profile-photos/${uid}/${uuidv4()}.${fileExtension}`;
 
       // Upload to Google Cloud Storage
       const imageUrl = await uploadProfilePhoto(fileName, req.file.buffer);
 
       // Update account info in Firestore
-      const accountRef = db.collection('users').doc(userId).collection('account').doc('info');
+      const accountRef = db.collection('users').doc(uid).collection('account').doc('info');
       const accountDoc = await accountRef.get();
 
       if (accountDoc.exists) {
@@ -29,13 +29,15 @@ class UserController {
       }
 
       // Update account document with new photo URL
-      await accountRef.set({
-        ...accountDoc.data(),
+      await accountRef.update({
         profilePhotoUrl: imageUrl,
         updatedAt: new Date().toISOString()
-      }, { merge: true });
+      });
 
-      res.json({ imageUrl });
+      res.json({ 
+        message: 'Profile photo uploaded successfully',
+        imageUrl 
+      });
     } catch (error) {
       console.error('Upload profile photo error:', error);
       res.status(500).json({ error: error.message });
@@ -44,8 +46,8 @@ class UserController {
 
   static async deletePhoto(req, res) {
     try {
-      const userId = req.query.userId || 'default-user';
-      const accountRef = db.collection('users').doc(userId).collection('account').doc('info');
+      const uid = req.user.uid; // From auth middleware
+      const accountRef = db.collection('users').doc(uid).collection('account').doc('info');
       const accountDoc = await accountRef.get();
 
       if (!accountDoc.exists) {
@@ -57,10 +59,8 @@ class UserController {
         return res.status(404).json({ error: 'No profile photo found' });
       }
 
-      // Delete from Google Cloud Storage
       await deleteProfilePhoto(photoUrl);
 
-      // Update account document
       await accountRef.update({
         profilePhotoUrl: null,
         updatedAt: new Date().toISOString()

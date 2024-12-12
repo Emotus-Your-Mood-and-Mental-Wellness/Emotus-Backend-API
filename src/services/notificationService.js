@@ -4,12 +4,10 @@ const { admin } = require('../config/firebase');
 
 class NotificationService {
   static scheduleReminders() {
-    // Schedule daily mood check-in reminders
     schedule.scheduleJob('0 9,15,21 * * *', async () => {
       await this.sendMoodCheckInReminders();
     });
 
-    // Schedule weekly summary notifications
     schedule.scheduleJob('0 18 * * 0', async () => {
       await this.sendWeeklySummaryNotifications();
     });

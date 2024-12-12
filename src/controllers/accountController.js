@@ -8,27 +8,22 @@ class AccountController {
         .orderBy('userId', 'desc')
         .get();
       
-      // Get all existing user IDs
       const userIds = snapshot.docs.map(doc => {
         const match = doc.data().userId.match(/^user(\d+)$/);
         return match ? parseInt(match[1], 10) : 0;
       }).filter(id => !isNaN(id));
 
-      // If no users exist, start with user1
       if (userIds.length === 0) {
         return 'user1';
       }
 
-      // Find the highest user number
       const maxUserId = Math.max(...userIds);
       const nextUserId = `user${maxUserId + 1}`;
 
-      // Verify the new ID doesn't exist (double-check)
       const newUserRef = db.collection('users').doc(nextUserId);
       const newUserDoc = await newUserRef.get();
       
       if (newUserDoc.exists) {
-        // In case of collision, find the next available number
         let counter = maxUserId + 1;
         while (true) {
           const testId = `user${counter}`;
@@ -53,19 +48,15 @@ class AccountController {
     try {
       const { username, password, email } = req.body;
       
-      // Generate next user ID
       const userId = await this.generateNextUserId();
       
-      // Create user document with the generated ID as the document ID
       const userRef = db.collection('users').doc(userId);
       
-      // Check if the document already exists
       const doc = await userRef.get();
       if (doc.exists) {
         throw new Error('User ID already exists');
       }
       
-      // Create the user document
       const userData = {
         userId,
         username,
@@ -73,28 +64,24 @@ class AccountController {
         createdAt: new Date().toISOString()
       };
 
-      // Only add email if it's provided
       if (email) {
         userData.email = email;
       }
 
       await userRef.set(userData);
 
-      // Create account info subcollection
       const accountRef = userRef.collection('account').doc('info');
       const accountData = {
         username,
         createdAt: new Date().toISOString()
       };
 
-      // Only add email to account info if it's provided
       if (email) {
         accountData.email = email;
       }
 
       await accountRef.set(accountData);
 
-      // Return success message with userId
       res.status(201).json({ 
         message: 'Account created successfully',
         userId: userId
@@ -109,7 +96,6 @@ class AccountController {
     try {
       const { userId, password } = req.body;
 
-      // Get user document
       const userRef = db.collection('users').doc(userId);
       const userDoc = await userRef.get();
 
@@ -121,14 +107,12 @@ class AccountController {
 
       const userData = userDoc.data();
       
-      // Check password
       if (userData.password !== password) {
         return res.status(401).json({ 
           error: 'Wrong password, try checking the password and userId again' 
         });
       }
 
-      // Return success response
       res.json({
         userId: userId,
         message: 'login successful'
@@ -171,7 +155,6 @@ class AccountController {
         return res.status(404).json({ error: 'Account information not found' });
       }
 
-      // Include userId in the response along with account info
       res.json({
         userId: userId,
         ...doc.data()

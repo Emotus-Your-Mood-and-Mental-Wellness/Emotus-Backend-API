@@ -5,21 +5,18 @@ const { accountSchema } = require('../utils/validationSchemas');
 
 const router = express.Router();
 
-// Register new account (no userId required)
 router.post('/register', 
   [
-    accountSchema.filter(validator => !validator.path), // Remove userId validation
+    accountSchema.filter(validator => !validator.path), 
     validateRequest
   ],
   (req, res) => accountController.register(req, res)
 );
 
-// Login route
 router.post('/login',
   (req, res) => accountController.login(req, res)
 );
 
-// Save or update account information (requires userId)
 router.post('/', 
   (req, res, next) => {
     if (!req.query.userId) {
@@ -32,7 +29,6 @@ router.post('/',
   (req, res) => accountController.saveAccountInfo(req, res)
 );
 
-// Get account information (requires userId)
 router.get('/',
   (req, res, next) => {
     if (!req.query.userId) {
@@ -43,7 +39,6 @@ router.get('/',
   (req, res) => accountController.getAccountInfo(req, res)
 );
 
-// Update account information (requires userId)
 router.put('/',
   (req, res, next) => {
     if (!req.query.userId) {

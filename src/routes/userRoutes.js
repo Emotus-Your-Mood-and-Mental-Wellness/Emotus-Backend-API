@@ -6,11 +6,10 @@ const { photoUploadSchema } = require('../utils/validationSchemas');
 
 const router = express.Router();
 
-// Configure multer for memory storage
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 5 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -21,7 +20,6 @@ const upload = multer({
   }
 });
 
-// Upload profile photo
 router.post('/photo', 
   upload.single('photo'),
   photoUploadSchema,
@@ -29,7 +27,6 @@ router.post('/photo',
   UserController.uploadPhoto
 );
 
-// Delete profile photo
 router.delete('/photo',
   UserController.deletePhoto
 );

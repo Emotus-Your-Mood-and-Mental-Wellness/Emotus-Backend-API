@@ -1,4 +1,4 @@
-const { auth } = require('../config/firebase');
+const { admin } = require('../config/firebase');
 
 const authenticateUser = async (req, res, next) => {
   try {
@@ -8,8 +8,15 @@ const authenticateUser = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    const decodedToken = await auth.verifyIdToken(token);
-    req.user = decodedToken;
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    
+    req.user = {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      emailVerified: decodedToken.email_verified,
+      role: decodedToken.role || 'user'
+    };
+    
     next();
   } catch (error) {
     console.error('Authentication error:', error);
@@ -17,4 +24,15 @@ const authenticateUser = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticateUser };
+const requireAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ error: 'Forbidden - Admin access required' });
+  }
+};
+
+module.exports = { 
+  authenticateUser,
+  requireAdmin
+};

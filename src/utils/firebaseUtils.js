@@ -37,7 +37,6 @@ class FirebaseUtils {
   static createQuery(collection, filters = [], orderBy = null, limit = null) {
     let query = db.collection(collection);
 
-    // If collection path contains slashes, use the correct reference
     if (collection.includes('/')) {
       query = db.doc(collection.substring(0, collection.lastIndexOf('/')))
                .collection(collection.substring(collection.lastIndexOf('/') + 1));

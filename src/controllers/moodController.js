@@ -1,12 +1,16 @@
 const MoodEntry = require('../models/MoodEntry');
-const { getDateRange } = require('../utils/dateUtils');
 
 class MoodController {
   static async createMoodEntry(req, res) {
     try {
       const moodData = req.body;
-      const userId = req.query.userId || 'default-user';
-      const newEntry = await MoodEntry.create(moodData, userId);
+      const uid = req.user.uid;
+      
+      if (!moodData.diaryEntry) {
+        return res.status(400).json({ error: 'Diary entry is required' });
+      }
+
+      const newEntry = await MoodEntry.create(moodData, uid);
       res.status(201).json(newEntry);
     } catch (error) {
       console.error('Create mood entry error:', error);
@@ -17,20 +21,9 @@ class MoodController {
   static async getMoodEntries(req, res) {
     try {
       const { startDate, endDate, period = 'daily' } = req.query;
-      const userId = req.query.userId || 'default-user';
+      const uid = req.user.uid;
 
-      let dateRange;
-      if (startDate && endDate) {
-        dateRange = { startDate, endDate };
-      } else {
-        dateRange = getDateRange(null, null, period);
-        dateRange = {
-          startDate: dateRange.startDate.toISOString(),
-          endDate: dateRange.endDate.toISOString()
-        };
-      }
-
-      const entries = await MoodEntry.getAll(userId, dateRange.startDate, dateRange.endDate, period);
+      const entries = await MoodEntry.getAll(uid, startDate, endDate, period);
       res.json(entries);
     } catch (error) {
       console.error('Get mood entries error:', error);
@@ -41,10 +34,14 @@ class MoodController {
   static async updateMoodEntry(req, res) {
     try {
       const { entryId } = req.params;
-      const userId = req.query.userId || 'default-user';
+      const uid = req.user.uid;
       const updateData = req.body;
       
-      const updated = await MoodEntry.update(userId, entryId, updateData);
+      if (!entryId) {
+        return res.status(400).json({ error: 'Entry ID is required' });
+      }
+
+      const updated = await MoodEntry.update(uid, entryId, updateData);
       res.json(updated);
     } catch (error) {
       console.error('Update mood entry error:', error);
@@ -55,8 +52,13 @@ class MoodController {
   static async deleteMoodEntry(req, res) {
     try {
       const { entryId } = req.params;
-      const userId = req.query.userId || 'default-user';
-      await MoodEntry.delete(userId, entryId);
+      const uid = req.user.uid;
+      
+      if (!entryId) {
+        return res.status(400).json({ error: 'Entry ID is required' });
+      }
+
+      await MoodEntry.delete(uid, entryId);
       res.status(204).send();
     } catch (error) {
       console.error('Delete mood entry error:', error);
